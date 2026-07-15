@@ -78,6 +78,7 @@ function submitIdea() {
 
 function showFeed() {
   hideAll();
+  setActiveNav("showFeed");
   document.getElementById('feed').classList.remove('hidden');
   const list = document.getElementById('idea-list');
   list.innerHTML = '';
@@ -91,13 +92,14 @@ function showFeed() {
     const raisedPct = Math.min(100, Math.floor((idea.raised / idea.goal) * 100));
     const el = document.createElement('div');
     el.className = 'idea-card';
+    const short = idea.desc.length > 60 ? idea.desc.substring(0,60) + '…' : idea.desc;
     el.innerHTML = `
-      <strong>${idea.title}</strong><br>
-      <small>${idea.desc.substring(0,60)}...</small><br>
-      <div class="surprise">👁 Surprise: ${idea.surprise.toFixed(2)} ${idea.voiceUrl ? '🎙' : ''}</div>
-      <div>Goal: ${idea.goal} | Raised: ${idea.raised} (${raisedPct}%)</div>
-      <div style="background:#3a3124;height:4px;margin:4px 0;"><div style="background:#c5a46e;height:100%;width:${raisedPct}%"></div></div>
-      <button onclick="investInIdea(${idea.id})">Invest (FOMO: ${Math.floor(Math.random()*10)+3} slots left)</button>
+      <strong>${idea.title}</strong>
+      <span class="desc">${short}</span>
+      <div class="surprise">👁 Surprise ${idea.surprise.toFixed(2)}${idea.voiceUrl ? ' · 🎙 voice' : ''}</div>
+      <div class="bar"><span style="width:${raisedPct}%"></span></div>
+      <div class="meta">${idea.raised} / ${idea.goal} raised · ${raisedPct}%</div>
+      <button onclick="investInIdea(${idea.id})">Invest <span class="fomo">${Math.floor(Math.random()*10)+3} slots left</span></button>
     `;
     list.appendChild(el);
   });
@@ -131,16 +133,19 @@ function investInIdea(id) {
 
 function showSubmit() {
   hideAll();
+  setActiveNav("showSubmit");
   document.getElementById('submit').classList.remove('hidden');
 }
 
 function showLive() {
   hideAll();
+  setActiveNav("showLive");
   document.getElementById('live').classList.remove('hidden');
 }
 
 function showCodex() {
   hideAll();
+  setActiveNav("showCodex");
   document.getElementById('codex').classList.remove('hidden');
   const list = document.getElementById('codex-list');
   list.innerHTML = '<h3>Idea Codex (ALWAYS LEARNING + p6 spores)</h3>';
@@ -168,6 +173,14 @@ function hideAll() {
   document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
 }
 
+// 액티브 탭 하이라이트 — onclick 함수명으로 매칭 (절제된 금빛 1곳)
+function setActiveNav(fnName) {
+  document.querySelectorAll('.nav button').forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    b.classList.toggle('active', oc.indexOf(fnName + '(') === 0);
+  });
+}
+
 function initP12() {
   updateWallet();
   
@@ -190,4 +203,3 @@ function initP12() {
 }
 
 window.onload = initP12;
-EOF

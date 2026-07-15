@@ -1,40 +1,169 @@
-/* p12 IdeaForge - Da Vinci SENSE + p6 Voice + Legion */
+/* p12 IdeaForge — SENSE pass: 60/30/10 색, 8px 그리드, 절제, 액센트 1곳 */
 :root {
-  --bg: #0a0806;
-  --gold: #c5a46e;
-  --card: #12100d;
+  --bg: #0a0806;        /* 60 바탕 */
+  --card: #14110c;      /* 30 보조 표면 */
+  --surface: #1a1712;
+  --line: #2c2620;      /* 절제된 보더 */
   --text: #f5f1e6;
-  --dim: #8b6f47;
+  --dim: #9c8b73;       /* WCAG 4.5:1 위로 올림 (기존 #8b6f47 저대비) */
+  --gold: #d9b877;      /* 10 강조 — 아껴서 딱 필요한 곳만 */
+  --gold-soft: rgba(217,184,119,0.14);
+  --danger: #f0857a;    /* FOMO 신호, 절제 사용 */
+
+  /* 8px 그리드 스케일 */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+  --r: 10px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-body { background: var(--bg); color: var(--text); font-family: system-ui; margin:0; padding:0; }
-.container { max-width: 480px; margin: 0 auto; padding: 16px; }
+* { box-sizing: border-box; }
 
-header { text-align: center; margin-bottom: 16px; }
-h1 { font-size: 32px; color: var(--gold); }
-.tagline { color: var(--dim); }
-.disclaimer { font-size: 9px; opacity: 0.5; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
 
-.wallet { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
-#wallet-info { font-family: monospace; font-size: 12px; background: var(--card); padding: 4px 8px; border-radius: 4px; }
+.container { max-width: 460px; margin: 0 auto; padding: var(--s5) var(--s4) var(--s6); }
 
-.nav { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
-button { background: var(--card); color: var(--gold); border: 1px solid #3a3124; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-button.primary { background: var(--gold); color: #0a0806; font-weight: 600; }
+/* ── 헤더: 주인공은 로고 하나 ── */
+header { text-align: center; margin-bottom: var(--s5); }
 
-.section { margin-bottom: 24px; }
+.disclaimer {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+  opacity: 0.7;
+  text-transform: uppercase;
+  margin-bottom: var(--s4);
+}
+
+h1 {
+  font-size: 40px;               /* 본문의 2배↑ — 확실한 위계 */
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--gold);
+  margin: 0 0 var(--s1);
+  line-height: 1.05;
+}
+.tagline { color: var(--dim); font-size: 14px; margin: 0; }
+
+/* ── 지갑 ── */
+.wallet { display: flex; gap: var(--s2); justify-content: center; align-items: center; margin: var(--s4) 0 var(--s5); }
+#wallet-info {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  color: var(--dim);
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: var(--s1) var(--s3);
+  border-radius: 999px;
+}
+
+/* ── 내비: 고스트 기본, 액티브만 금빛 (액센트 절제) ── */
+.nav {
+  display: flex;
+  gap: var(--s2);
+  justify-content: center;
+  margin-bottom: var(--s5);
+  flex-wrap: wrap;
+}
+
+button {
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 160ms var(--ease), color 160ms var(--ease),
+              border-color 160ms var(--ease), transform 120ms var(--ease);
+}
+button:hover { border-color: var(--gold); color: var(--text); }
+button:active { transform: scale(0.97); }
+
+.nav button.active {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ── 주인공 CTA: 화면당 진짜 금빛은 여기 ── */
+button.primary {
+  background: var(--gold);
+  color: #0a0806;
+  border-color: var(--gold);
+  font-weight: 650;
+  width: 100%;
+  padding: var(--s3);
+  margin-top: var(--s3);
+  font-size: 15px;
+}
+button.primary:hover { filter: brightness(1.06); color: #0a0806; }
+
+/* ── 섹션 전환 페이드 ── */
+.section { margin-bottom: var(--s5); animation: fade 260ms var(--ease); }
 .hidden { display: none; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-.form label { display: block; font-size: 12px; color: var(--dim); margin: 10px 0 4px; }
-.form input, .form textarea { width: 100%; background: #1a1712; border: 1px solid #3a3124; color: var(--text); padding: 8px; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; }
-.form textarea { height: 80px; }
+h2 { font-size: 21px; font-weight: 650; margin: 0 0 var(--s4); letter-spacing: -0.01em; }
+h3 { font-size: 15px; color: var(--dim); margin: 0 0 var(--s3); }
 
-.idea-grid { display: grid; gap: 10px; }
-.idea-card { background: var(--card); border: 1px solid #3a3124; padding: 12px; border-radius: 8px; }
-.idea-card .surprise { color: #f5d76e; font-size: 11px; }
-.idea-card button { margin-top: 8px; width: 100%; }
+/* ── 폼 ── */
+.form label { display: block; font-size: 12px; color: var(--dim); margin: var(--s4) 0 var(--s1); }
+.form input, .form textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: var(--s3);
+  border-radius: var(--r);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 160ms var(--ease);
+}
+.form input:focus, .form textarea:focus { outline: none; border-color: var(--gold); }
+.form textarea { height: 88px; resize: vertical; }
+.form > button:not(.primary) { margin-top: var(--s1); }
 
-.fomo { color: #f87171; font-size: 11px; }
+/* ── 아이디어 카드 ── */
+.idea-grid { display: grid; gap: var(--s3); }
+.idea-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: var(--s4);
+  border-radius: 14px;
+  transition: border-color 160ms var(--ease), transform 160ms var(--ease);
+}
+.idea-card:hover { border-color: var(--line); transform: translateY(-2px); }
+.idea-card strong { font-size: 15px; }
+.idea-card .desc { color: var(--dim); font-size: 13px; margin: var(--s1) 0 var(--s3); display: block; }
+.idea-card .surprise { color: var(--gold); font-size: 11px; letter-spacing: 0.02em; }
+.idea-card .meta { font-size: 12px; color: var(--dim); margin-top: var(--s2); }
 
-.notebook-entry { background: var(--card); border: 1px solid #3a3124; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
-EOF
+/* 진짜 시스템 컴포넌트가 된 펀딩 바 */
+.bar { height: 6px; background: var(--surface); border-radius: 999px; overflow: hidden; margin: var(--s2) 0; }
+.bar > span { display: block; height: 100%; background: var(--gold); border-radius: 999px; transition: width 500ms var(--ease); }
+
+.idea-card button { margin-top: var(--s3); width: 100%; }
+
+/* ── FOMO: 절제된 danger 한 곳 ── */
+.fomo { color: var(--danger); font-size: 11px; font-weight: 500; }
+
+.live-item, .notebook-entry {
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r);
+  margin-bottom: var(--s2);
+  font-size: 13px;
+}
+.notebook-entry small { color: var(--dim); font-size: 11px; }
+
+#voice-preview { font-size: 13px; color: var(--dim); margin-top: var(--s2); }
+#voice-preview audio { width: 100%; margin-top: var(--s2); }
