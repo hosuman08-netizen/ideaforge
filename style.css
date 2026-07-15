@@ -1,0 +1,40 @@
+/* p12 IdeaForge - Da Vinci SENSE + p6 Voice + Legion */
+:root {
+  --bg: #0a0806;
+  --gold: #c5a46e;
+  --card: #12100d;
+  --text: #f5f1e6;
+  --dim: #8b6f47;
+}
+
+body { background: var(--bg); color: var(--text); font-family: system-ui; margin:0; padding:0; }
+.container { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+header { text-align: center; margin-bottom: 16px; }
+h1 { font-size: 32px; color: var(--gold); }
+.tagline { color: var(--dim); }
+.disclaimer { font-size: 9px; opacity: 0.5; }
+
+.wallet { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
+#wallet-info { font-family: monospace; font-size: 12px; background: var(--card); padding: 4px 8px; border-radius: 4px; }
+
+.nav { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+button { background: var(--card); color: var(--gold); border: 1px solid #3a3124; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+button.primary { background: var(--gold); color: #0a0806; font-weight: 600; }
+
+.section { margin-bottom: 24px; }
+.hidden { display: none; }
+
+.form label { display: block; font-size: 12px; color: var(--dim); margin: 10px 0 4px; }
+.form input, .form textarea { width: 100%; background: #1a1712; border: 1px solid #3a3124; color: var(--text); padding: 8px; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; }
+.form textarea { height: 80px; }
+
+.idea-grid { display: grid; gap: 10px; }
+.idea-card { background: var(--card); border: 1px solid #3a3124; padding: 12px; border-radius: 8px; }
+.idea-card .surprise { color: #f5d76e; font-size: 11px; }
+.idea-card button { margin-top: 8px; width: 100%; }
+
+.fomo { color: #f87171; font-size: 11px; }
+
+.notebook-entry { background: var(--card); border: 1px solid #3a3124; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+EOF

@@ -1,0 +1,9 @@
+{
+  "name": "IdeaForge",
+  "short_name": "IdeaForge",
+  "description": "Submit ideas, get investors. p6 Voice. p9 Live. p10 Credits. Fictional.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0a0806",
+  "theme_color": "#c5a46e"
+}

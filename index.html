@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IdeaForge • 아이디어 → 투자</title>
+  <meta name="description" content="아이디어 제출하면 투자자들이 투자. p6 Voice + p9 Live + p10 Stable. Legion p12. Fictional tokens only.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="disclaimer">FICTIONAL IDEA TOKENS ONLY • 18+ • NO REAL INVESTMENT OR RETURNS • p12 × p6 Voice × p9 × p10</div>
+      <h1>IdeaForge</h1>
+      <p class="tagline">Submit. Voice it. Get funded. (Fictional)</p>
+      
+      <div class="wallet">
+        <button onclick="connectWallet()">🔗 Connect</button>
+        <div id="wallet-info">0x... • 1,250 $EROS / 320 Credits</div>
+      </div>
+      
+      <div class="nav">
+        <button onclick="showSubmit()">📝 Submit Idea (p6 Voice)</button>
+        <button onclick="showFeed()">🔥 Hot Ideas (FOMO)</button>
+        <button onclick="showLive()">📡 p9 Live Pitches</button>
+        <button onclick="showCodex()">📓 Codex</button>
+      </div>
+    </header>
+
+    <!-- Submit -->
+    <div id="submit" class="section">
+      <h2>Submit Your Idea</h2>
+      <div class="form">
+        <label>Idea Title</label>
+        <input id="idea-title" placeholder="Revolutionary voice app for errands">
+        
+        <label>Voice Pitch (p6 Lung Surprise Eye - boosts visibility)</label>
+        <button onclick="recordVoicePitch()">🎙 Record Voice Pitch</button>
+        <div id="voice-preview"></div>
+        
+        <label>Description</label>
+        <textarea id="idea-desc" placeholder="Explain your vision..."></textarea>
+        
+        <label>Funding Goal (Credits or $EROS)</label>
+        <input id="goal" type="number" value="500">
+        
+        <button onclick="submitIdea()" class="primary">Submit Idea (FOMO: limited slots)</button>
+      </div>
+    </div>
+
+    <!-- Feed -->
+    <div id="feed" class="section hidden">
+      <h2>Hot Ideas <span class="fomo">🔥 47 investors online • 12 slots left</span></h2>
+      <div id="idea-list" class="idea-grid"></div>
+    </div>
+
+    <!-- Live -->
+    <div id="live" class="section hidden">
+      <h2>p9 Live Idea Pitches</h2>
+      <div class="live-item">Voice demo for p12 idea • 89 watching • 5 Credits to join</div>
+      <button>Join Live (p6 voice enabled)</button>
+    </div>
+
+    <!-- Codex -->
+    <div id="codex" class="section hidden">
+      <h2>📓 Idea Codex (ALWAYS LEARNING)</h2>
+      <div id="codex-list"></div>
+    </div>
+  </div>
+
+  <script src="../p6-airpods-artistic/lung-surprise-eye.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+EOF
