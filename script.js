@@ -129,12 +129,17 @@ function investInIdea(id) {
   showFeed();
 }
 
+function showSubmit() {
+  hideAll();
+  document.getElementById('submit').classList.remove('hidden');
+}
+
 function showLive() {
   hideAll();
   document.getElementById('live').classList.remove('hidden');
 }
 
-function showNotebook() {
+function showCodex() {
   hideAll();
   document.getElementById('codex').classList.remove('hidden');
   const list = document.getElementById('codex-list');
@@ -163,11 +168,6 @@ function hideAll() {
   document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
 }
 
-function updateWallet() {
-  const el = document.getElementById('wallet-info');
-  if (el) el.innerHTML = `${wallet || '0xDemo'} • ${balance} $EROS / ${credits} Credits`;
-}
-
 function initP12() {
   updateWallet();
   
@@ -185,10 +185,8 @@ function initP12() {
     console.log('[p12] p6 Lung Surprise Eye ready for pitches.');
   }
   
-  // Show feed
-  setTimeout(() => {
-    document.getElementById('feed').classList.remove('hidden');
-  }, 300);
+  // Show feed (actually render the idea cards, not just unhide an empty grid)
+  showFeed();
 }
 
 window.onload = initP12;
