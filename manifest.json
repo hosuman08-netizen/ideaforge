@@ -1,7 +1,7 @@
 {
   "name": "IdeaForge",
   "short_name": "IdeaForge",
-  "description": "Submit ideas, get investors. p6 Voice. p9 Live. p10 Credits. Fictional.",
+  "description": "Submit ideas by text or voice, get community votes and funding. Fictional demo.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0a0806",

@@ -1,4 +1,4 @@
-/* p12 IdeaForge — SENSE pass: 60/30/10 색, 8px 그리드, 절제, 액센트 1곳 */
+/* IdeaForge — 60/30/10 palette, 8px grid, restrained, single accent */
 :root {
   --bg: #0a0806;        /* 60 바탕 */
   --card: #14110c;      /* 30 보조 표면 */
@@ -126,6 +126,25 @@ h3 { font-size: 15px; color: var(--dim); margin: 0 0 var(--s3); }
   font-size: 14px;
   font-family: inherit;
   transition: border-color 160ms var(--ease);
+}
+
+/* Protection / teaser system */
+.teaser { color: var(--dim); font-style: italic; }
+.redact-note { font-size: 10px; color: var(--danger); margin: 4px 0; opacity: .9; }
+.keywords { margin: 4px 0; }
+.kw { 
+  background: var(--surface); 
+  color: var(--gold); 
+  font-size: 10px; 
+  padding: 1px 6px; 
+  border-radius: 3px; 
+  margin-right: 3px; 
+  display: inline-block; 
+}
+.unlock-btn {
+  background: #2a251f;
+  color: var(--gold);
+  border: 1px solid var(--gold);
 }
 .form input:focus, .form textarea:focus { outline: none; border-color: var(--gold); }
 .form textarea { height: 88px; resize: vertical; }

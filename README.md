@@ -1,39 +1,40 @@
-# p12 — IdeaForge (아이디어 제출 → 투자 플랫폼)
+# IdeaForge — pitch → fund (demo)
 
-**Sovereign Vision**: Web3 platform where users submit ideas (text/voice), investors discover and invest with tokens/stablecoins. Fictional "Idea Shares" or contribution tokens. Not securities (미꾸라지).
+A single-page demo where users submit ideas (text or voice), the community votes,
+and backers fund the best ones with in-app Credits.
 
-**Core Mechanics**:
-- Idea submission: Text + p6 Voice pitch (Lung Surprise Eye for "passion" score).
-- Discovery: Browse, search, FOMO trending/hot ideas.
-- Investment: Use $EROS or p10 stablecoins. Get fictional shares/tokens.
-- Milestones: Progress tracking, variable rewards based on "surprise".
-- Social: p9 live pitches, p11 metaverse showcases.
+> **Fictional demo.** All tokens and Credits are in-app only. There is no real money,
+> investment, return, or equity of any kind. 18+.
 
-**Legion Cross**:
-- p6: Voice as core for authentic pitches. Surprise boosts visibility/funding.
-- p9: Live platform for idea pitches/events.
-- p10: Stablecoin payments for investments (with Harvest Credits framing).
-- p7: Errand-style "idea validation" tasks?
-- p1-p5: Gacha for idea luck, magic for development, etc.
-- p8 adult? Niche for creative adult ideas if fits.
+## Core loop
+- **Submit**: title + public teaser (keywords + high-level problem) + a protected full pitch.
+  An optional voice pitch adds a "pitch energy" score that boosts visibility.
+- **Discover**: everyone sees teasers and keywords. The full pitch stays hidden.
+- **Unlock**: pay a small Credit cost to read the full pitch. ~70% of the fee goes to the
+  submitter, so submitters earn from serious interest.
+- **Vote**: a finite daily budget (10/day), one vote per idea, toggleable.
+- **Fund**: choose an amount in Credits; stake and ownership % are tracked; ideas hit a
+  goal and become funded (funding is capped at the goal — no overfunding).
+- **Activity**: a local log of your submissions, unlocks, votes, and investments, plus a
+  timestamped submission receipt for prior-art reference.
 
-**Da Vinci + SENSE + Full-Cheat**:
-- Sfumato soft UI for ideas.
-- FOMO: Limited funding windows, scarcity of top ideas.
-- Variable ratio: Random boosts, near-miss funding.
-- Psych: Endowment on invested ideas, sunk cost on follows.
-- ALWAYS LEARNING: Codex for idea evolution, re-listen voice updates "value".
+## Protection model
+Only the idea owner and backers who have unlocked (or invested in) an idea can see its
+full pitch. Everyone else sees the teaser and keywords only.
 
-**미꾸라지**:
-- Fictional "IdeaForge Tokens" / "Contribution Credits". No promise of returns.
-- Prominent disclosure: "Fictional entertainment. Not investment advice. 18+."
-- Age gate, geo compliance.
-- Processor for real money (p10).
-- No direct "equity" or "ROI" claims.
+## Ranking
+Hot score = community votes + funding momentum + a small pitch-energy nudge. No random
+placement — ranking reflects real signals.
 
-**Prototype**: PWA with submit form (voice), idea feed, invest mock.
+## Tech
+Client-only. Plain HTML/CSS/JS, `localStorage` for state, minimal PWA manifest and
+service-worker stub. No backend, no external dependencies.
 
-**Roadmap**: Web3 (NFT ideas, on-chain investments), p6 full voice scoring, AI matching.
+- `index.html` — layout
+- `script.js` — app logic
+- `style.css` — styling
+- `manifest.json` / `sw.js` — PWA scaffolding
 
-Legion one. Sovereign neo. 2026-07-13
-EOF
+## Run
+Open `index.html` in a browser, or serve the folder statically
+(e.g. `python3 -m http.server`).
