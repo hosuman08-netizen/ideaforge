@@ -150,7 +150,37 @@ h3 { font-size: 15px; color: var(--dim); margin: 0 0 var(--s3); }
 .bar { height: 6px; background: var(--surface); border-radius: 999px; overflow: hidden; margin: var(--s2) 0; }
 .bar > span { display: block; height: 100%; background: var(--gold); border-radius: 999px; transition: width 500ms var(--ease); }
 
-.idea-card button { margin-top: var(--s3); width: 100%; }
+.idea-card > button { margin-top: var(--s3); width: 100%; }
+.idea-card > button:disabled { opacity: 0.7; cursor: default; border-color: var(--line); color: var(--dim); }
+
+/* Funded state: goal reached, real terminal state */
+.idea-card.funded { border-color: var(--gold); background: linear-gradient(180deg, var(--gold-soft), var(--card)); }
+
+/* Rank badge on top-3 hot ideas (driven by real vote+funding score) */
+.rankbadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gold);
+  background: var(--gold-soft);
+  border: 1px solid var(--gold);
+  padding: 1px var(--s2);
+  border-radius: 999px;
+  margin-bottom: var(--s2);
+  letter-spacing: 0.03em;
+}
+
+/* Vote + stake row */
+.idea-card .stats {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s2); margin-top: var(--s3);
+}
+.votebtn { width: auto; padding: var(--s1) var(--s3); font-size: 13px; font-weight: 600; }
+.votebtn.voted { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+.mystake { font-size: 11px; color: var(--gold); text-align: right; }
+
+.feed-sub { font-size: 12px; color: var(--dim); margin: calc(-1 * var(--s2)) 0 var(--s4); }
+.feed-sub b { color: var(--gold); }
 
 /* ── FOMO: 절제된 danger 한 곳 ── */
 .fomo { color: var(--danger); font-size: 11px; font-weight: 500; }
