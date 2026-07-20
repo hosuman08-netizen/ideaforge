@@ -39,6 +39,7 @@
       <div class="nav">
         <button onclick="showSubmit()">📝 Submit</button>
         <button onclick="showFeed()">🔥 Hot Ideas</button>
+        <button onclick="showMine()">💼 My Ideas</button>
         <button onclick="showLive()">📡 Live</button>
         <button onclick="showCodex()">📓 Activity</button>
       </div>
@@ -74,6 +75,13 @@
       <h2>Hot Ideas</h2>
       <p id="feed-sub" class="feed-sub"></p>
       <div id="idea-list" class="idea-grid"></div>
+    </div>
+
+    <!-- My Ideas -->
+    <div id="mine" class="section hidden">
+      <h2>💼 My Ideas</h2>
+      <p id="mine-sub" class="feed-sub"></p>
+      <div id="mine-list" class="idea-grid"></div>
     </div>
 
     <!-- Live -->

@@ -22,6 +22,24 @@ function todayKey() {
 function saveMe() { localStorage.setItem('p12_me', JSON.stringify(me)); }
 function saveIdeas() { localStorage.setItem('p12_ideas', JSON.stringify(ideas)); }
 
+// ── Owner earnings: credits accrued to an idea's owner, waiting to be claimed. ──
+// This closes the submitter loop: post an idea → backers unlock/invest → you earn → you claim.
+function accrueOwnerEarnings(idea, amount, note) {
+  if (!idea || amount <= 0) return;
+  idea.pendingEarnings = (idea.pendingEarnings || 0) + amount;
+  idea.lifetimeEarnings = (idea.lifetimeEarnings || 0) + amount;
+  if (note && wallet && idea.owner === wallet) {
+    addToCodex(note);
+  }
+}
+
+// Ideas I own that have unclaimed earnings.
+function myPendingTotal() {
+  if (!wallet) return 0;
+  return ideas.filter(i => i.owner === wallet)
+              .reduce((s, i) => s + (i.pendingEarnings || 0), 0);
+}
+
 function rollVoteDay() {
   const k = todayKey();
   if (me.voteDay !== k) { me.voteDay = k; me.votesUsed = 0; saveMe(); }
@@ -39,17 +57,23 @@ function normalizeIdea(idea) {
   if (!Array.isArray(idea.keywords)) idea.keywords = (idea.title || '').toLowerCase().split(' ').slice(0,4);
   if (!idea.secretSauce) idea.secretSauce = idea.desc || idea.fullDesc || '';
   if (!idea.unlocks) idea.unlocks = []; // wallets who paid to unlock full
+  if (typeof idea.pendingEarnings !== 'number') idea.pendingEarnings = 0;
+  if (typeof idea.lifetimeEarnings !== 'number') idea.lifetimeEarnings = 0;
   return idea;
 }
 ideas = ideas.map(normalizeIdea);
 
 function updateWallet() {
   const el = document.getElementById('wallet-info');
-  if (el) el.innerHTML = `${wallet || 'Guest'} • ${balance} Tokens / ${credits} Credits`;
+  if (!el) return;
+  const pending = wallet ? myPendingTotal() : 0;
+  const earn = pending > 0 ? ` <span class="wallet-earn">+${pending} cr to claim</span>` : '';
+  el.innerHTML = `${wallet || 'Guest'} • ${balance} Tokens / ${credits} Credits${earn}`;
 }
 
 function connectWallet() {
   wallet = 'user-' + Math.random().toString(16).slice(2, 10);
+  simulateBackerInterest();
   updateWallet();
   showFeed();
 }
@@ -176,10 +200,9 @@ function unlockIdea(id) {
   if (!me.unlockedIds) me.unlockedIds = [];
   me.unlockedIds.push(idea.id);
 
-  // Win-win: submitter gets most of the fee (simulated revenue to owner balance)
-  // For demo: add to a global or just log. Real would transfer.
-  if (!idea.ownerCredits) idea.ownerCredits = 0;
-  idea.ownerCredits = (idea.ownerCredits || 0) + Math.floor(cost * 0.7);
+  // Win-win: 70% of the fee accrues to the submitter as claimable earnings.
+  const toOwner = Math.floor(cost * 0.7);
+  accrueOwnerEarnings(idea, toOwner, `💰 Someone unlocked your “${idea.title}” — +${toOwner} cr pending in My Ideas.`);
   if (!idea.unlocks) idea.unlocks = [];
   if (!idea.unlocks.includes(wallet)) idea.unlocks.push(wallet);
 
@@ -188,7 +211,7 @@ function unlockIdea(id) {
   const unlockedCount = idea.unlocks.length;
   addToCodex(`Unlocked the full pitch of “${idea.title}” for ${cost} cr. ${unlockedCount} backers have seen it.`);
 
-  alert(`Full pitch unlocked! ${cost} Credits spent. ${Math.floor(cost*0.7)} went to the submitter.\n\nYou can now read the full plan and invest, or walk away.`);
+  alert(`Full pitch unlocked! ${cost} Credits spent. ${toOwner} accrue to the submitter.\n\nYou can now read the full plan and invest, or walk away.`);
 
   showFeed();
 }
@@ -341,6 +364,10 @@ function doInvest(id, amt) {
   if (!idea.investors.includes(wallet)) idea.investors.push(wallet);
   me.stakes[id] = (me.stakes[id] || 0) + amt;
 
+  // Submitter royalty: 5% of each investment accrues to the idea owner as claimable earnings.
+  const royalty = Math.floor(amt * 0.05);
+  if (royalty > 0) accrueOwnerEarnings(idea, royalty, `💰 “${idea.title}” took an investment — +${royalty} cr royalty pending.`);
+
   const justFunded = !idea.funded && idea.raised >= idea.goal;
   if (justFunded) idea.funded = true;
 
@@ -369,6 +396,96 @@ function showLive() {
   hideAll();
   setActiveNav("showLive");
   document.getElementById('live').classList.remove('hidden');
+}
+
+// ── MY IDEAS: the submitter payoff surface — see your ideas earn, then claim. ──
+function showMine() {
+  hideAll();
+  setActiveNav("showMine");
+  document.getElementById('mine').classList.remove('hidden');
+
+  const sub = document.getElementById('mine-sub');
+  const list = document.getElementById('mine-list');
+  list.innerHTML = '';
+
+  if (!wallet) {
+    sub.innerHTML = '';
+    list.innerHTML = '<p>Sign in to see the ideas you submitted and what they’ve earned.</p>';
+    return;
+  }
+
+  const mine = ideas.filter(i => i.owner === wallet);
+  const pending = myPendingTotal();
+  const lifetime = mine.reduce((s, i) => s + (i.lifetimeEarnings || 0), 0);
+
+  sub.innerHTML = `You own <b>${mine.length}</b> idea${mine.length === 1 ? '' : 's'} · ` +
+                  `<b>${pending}</b> cr ready to claim · ${lifetime} cr earned all-time` +
+                  `<br><small>Earnings come from unlocks, investment royalties, and simulated demo backers.</small>`;
+
+  if (mine.length === 0) {
+    list.innerHTML = '<p>You haven’t submitted an idea yet. Post one — every unlock and investment earns you Credits.</p>';
+    return;
+  }
+
+  if (pending > 0) {
+    const claim = document.createElement('button');
+    claim.className = 'primary';
+    claim.textContent = `💰 Claim ${pending} Credits`;
+    claim.onclick = claimEarnings;
+    list.appendChild(claim);
+  }
+
+  mine.slice().sort((a, b) => (b.pendingEarnings || 0) - (a.pendingEarnings || 0)).forEach(idea => {
+    const raisedPct = idea.goal > 0 ? Math.min(100, Math.floor((idea.raised / idea.goal) * 100)) : 0;
+    const el = document.createElement('div');
+    el.className = 'idea-card' + (idea.funded ? ' funded' : '');
+    el.innerHTML = `
+      <strong>${escapeHtml(idea.title)}</strong>
+      <div class="bar"><span style="width:${raisedPct}%"></span></div>
+      <div class="meta">${idea.raised} / ${idea.goal} raised · ${raisedPct}%${idea.funded ? ' · ✅ FUNDED' : ''} · ${(idea.unlocks || []).length} unlocked · ${idea.votes} votes</div>
+      <div class="earn-row">
+        <span class="earn-pending">${idea.pendingEarnings || 0} cr pending</span>
+        <span class="earn-life">${idea.lifetimeEarnings || 0} cr earned</span>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+// Demo ambient backers: simulated interest in YOUR ideas so the earn loop is visible
+// in single-player. Clearly a demo signal (disclosed in the sub text). Runs once per app open.
+function simulateBackerInterest() {
+  if (!wallet) return;
+  const mine = ideas.filter(i => i.owner === wallet && !i.funded);
+  if (mine.length === 0) return;
+  let earned = 0;
+  mine.forEach(idea => {
+    // Higher-voted / higher-energy ideas draw more simulated interest.
+    const pull = idea.votes * 0.4 + (idea.surprise || 0.3);
+    if (Math.random() < Math.min(0.8, 0.25 + pull * 0.15)) {
+      const gain = 2 + Math.floor(Math.random() * 6 + pull * 3);
+      accrueOwnerEarnings(idea, gain);
+      earned += gain;
+    }
+  });
+  if (earned > 0) {
+    saveIdeas();
+    addToCodex(`📈 Demo backers noticed your ideas — +${earned} cr accrued while you were away. Claim in My Ideas.`);
+  }
+}
+
+function claimEarnings() {
+  if (!wallet) { alert('Sign in first.'); return; }
+  const pending = myPendingTotal();
+  if (pending <= 0) { showMine(); return; }
+
+  credits += pending;
+  ideas.forEach(i => { if (i.owner === wallet) i.pendingEarnings = 0; });
+  saveIdeas();
+  updateWallet();
+  addToCodex(`Claimed ${pending} cr in earnings from your ideas.`);
+  alert(`Claimed ${pending} Credits from your ideas. They’re now in your balance.`);
+  showMine();
 }
 
 function showCodex() {
@@ -428,6 +545,8 @@ function initP12() {
   }
 
   rollVoteDay();
+  simulateBackerInterest();
+  updateWallet();
   showFeed();
 }
 

@@ -204,6 +204,15 @@ h3 { font-size: 15px; color: var(--dim); margin: 0 0 var(--s3); }
 /* ── FOMO: 절제된 danger 한 곳 ── */
 .fomo { color: var(--danger); font-size: 11px; font-weight: 500; }
 
+/* ── My Ideas: 소유자 수익 표면 ── */
+.wallet-earn { color: var(--gold); font-weight: 600; }
+.earn-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-top: var(--s2); font-size: 12px;
+}
+.earn-pending { color: var(--gold); font-weight: 600; }
+.earn-life { color: var(--dim); }
+
 .live-item, .notebook-entry {
   background: var(--card);
   border: 1px solid var(--line);
