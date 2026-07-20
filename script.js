@@ -1850,3 +1850,5 @@ function initP12() {
 window.onload = initP12;
 
 try{ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', renderP12Loop); else renderP12Loop(); }catch(e){}
+
+/* LEGION_WAVE_4_wave_stamp */ /* ship wave 4 2026-07-21T07:41:44 */
