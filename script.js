@@ -43,6 +43,44 @@ const CAP_MULTIPLE = 20;
 
 // ── Small utilities ───────────────────────────────────────────────────
 function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+function p12DayKey(off){const d=new Date();d.setDate(d.getDate()+(off||0));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function bumpP12Streak(kind){
+  try{
+    let st=JSON.parse(localStorage.getItem('p12_streak')||'{}');
+    const t0=p12DayKey(0);
+    if(st.last!==t0){
+      const y=p12DayKey(-1),y2=p12DayKey(-2);
+      if(st.last&&st.last!==y&&st.last===y2&&(st.count||0)>=3){
+        const ready=!st.shieldLast||((new Date(t0)-new Date(st.shieldLast))/86400000)>=7;
+        if(ready){st.shieldLast=t0;st.last=y;}
+      }
+      st.count=(st.last===y)?(st.count||0)+1:1; st.last=t0;
+      localStorage.setItem('p12_streak',JSON.stringify(st));
+      try{legionTrack('streak',{count:st.count,kind:kind||'act'})}catch(e){}
+    }
+    const k='p12_day_'+t0; let day=JSON.parse(localStorage.getItem(k)||'{"ideas":0,"votes":0}');
+    if(kind==='idea') day.ideas=(day.ideas||0)+1;
+    if(kind==='vote') day.votes=(day.votes||0)+1;
+    localStorage.setItem(k,JSON.stringify(day));
+    renderP12Loop();
+  }catch(e){}
+}
+function renderP12Loop(){
+  try{
+    let el=document.getElementById('p12Loop');
+    if(!el){
+      el=document.createElement('div'); el.id='p12Loop';
+      el.style.cssText='margin:8px 0;padding:10px;border:1px solid #2a2438;border-radius:12px;font-size:12px;display:flex;flex-wrap:wrap;gap:8px';
+      const host=document.querySelector('header')||document.querySelector('h1')||document.body;
+      host.insertAdjacentElement('afterend', el);
+    }
+    const st=JSON.parse(localStorage.getItem('p12_streak')||'{}');
+    const day=JSON.parse(localStorage.getItem('p12_day_'+p12DayKey(0))||'{}');
+    el.innerHTML='🔥 '+(st.count||0)+'일 · 오늘 아이디어 '+(day.ideas||0)+' · 투표 '+(day.votes||0)+' · 총 '+(ideas&&ideas.length||0)+' · <span style="opacity:.7">시뮬·투자권유 아님</span>';
+  }catch(e){}
+}
+
 function saveMe() { localStorage.setItem('p12_me', JSON.stringify(me)); }
 function saveIdeas() { localStorage.setItem('p12_ideas', JSON.stringify(ideas)); }
 
@@ -325,6 +363,7 @@ function myVoteWeight() {
 }
 
 function voteIdea(id, ev) {
+  try{bumpP12Streak('vote');}catch(e){}
   if (ev) ev.stopPropagation();
   if (!requireWallet('vote')) return;
   const idea = ideas.find(i => i.id === id);
@@ -1359,6 +1398,7 @@ function submitIdea() {
 
   ideas.unshift(idea);
   saveIdeas();
+  try{bumpP12Streak('idea');}catch(e){}
 
   if (window.legionTrack) window.legionTrack('activate');
 
@@ -1808,3 +1848,5 @@ function initP12() {
 }
 
 window.onload = initP12;
+
+try{ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', renderP12Loop); else renderP12Loop(); }catch(e){}
