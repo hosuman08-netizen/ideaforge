@@ -531,12 +531,6 @@ function showSubmit() {
   document.getElementById('submit').classList.remove('hidden');
 }
 
-function showLive() {
-  hideAll();
-  setActiveNav("showLive");
-  document.getElementById('live').classList.remove('hidden');
-}
-
 // ── MY IDEAS: the submitter payoff surface — see your ideas earn, then claim. ──
 function showMine() {
   hideAll();
