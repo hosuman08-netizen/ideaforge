@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IdeaForge — Pitch your idea, let the crowd fund it (demo)</title>
-  <meta name="description" content="Pitch an idea by text or voice, then the community votes and funds the ones it loves. A free fictional demo — in-app tokens only, no real money.">
+  <meta name="description" content="Pitch an idea by text or voice, set a goal and a deadline, offer reward tiers. The community votes, comments and backs it — all-or-nothing. A free fictional demo — in-app tokens only, no real money.">
   <link rel="canonical" href="https://hosuman08-netizen.github.io/ideaforge/">
 
   <!-- Open Graph -->
@@ -12,13 +12,13 @@
   <meta property="og:site_name" content="IdeaForge">
   <meta property="og:url" content="https://hosuman08-netizen.github.io/ideaforge/">
   <meta property="og:title" content="IdeaForge — Pitch your idea, let the crowd fund it">
-  <meta property="og:description" content="Pitch by text or voice. The community votes and funds the best ideas. Free fictional demo — in-app tokens only, no real money.">
+  <meta property="og:description" content="Set a goal and a deadline, offer reward tiers, rally backers. All-or-nothing. Free fictional demo — in-app tokens only, no real money.">
   <meta property="og:image" content="https://hosuman08-netizen.github.io/ideaforge/og.png">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="IdeaForge — Pitch your idea, let the crowd fund it">
-  <meta name="twitter:description" content="Pitch by text or voice. The community votes and funds the best ideas. Free fictional demo — in-app tokens only, no real money.">
+  <meta name="twitter:description" content="Set a goal and a deadline, offer reward tiers, rally backers. All-or-nothing. Free fictional demo — in-app tokens only, no real money.">
   <meta name="twitter:image" content="https://hosuman08-netizen.github.io/ideaforge/og.png">
 
   <link rel="stylesheet" href="style.css">
@@ -29,62 +29,127 @@
     <header>
       <div class="disclaimer">FICTIONAL DEMO • 18+ • IN-APP TOKENS ONLY — NO REAL MONEY, INVESTMENT, RETURNS OR EQUITY<br>Only public teasers are shown. Full pitches stay protected until unlocked.</div>
       <h1>IdeaForge</h1>
-      <p class="tagline">Submit. Voice it. Get funded. (Demo)</p>
+      <p class="tagline">Set a goal. Set a deadline. Let the crowd decide. (Demo)</p>
 
       <div class="wallet">
-        <button onclick="connectWallet()">🔗 Sign in</button>
+        <button id="signbtn" onclick="connectWallet()">🔗 Sign in</button>
         <div id="wallet-info">Guest • 1,250 Tokens / 320 Credits</div>
       </div>
 
       <div class="nav">
+        <button onclick="showDiscover()">🔍 Discover</button>
         <button onclick="showSubmit()">📝 Submit</button>
-        <button onclick="showFeed()">🔥 Hot Ideas</button>
         <button onclick="showMine()">💼 My Ideas</button>
         <button onclick="showLive()">📡 Live</button>
         <button onclick="showCodex()">📓 Activity</button>
       </div>
     </header>
 
-    <!-- Submit -->
-    <div id="submit" class="section">
-      <h2>Submit Your Idea</h2>
-      <div class="form">
-        <label>Idea Title</label>
-        <input id="idea-title" placeholder="Revolutionary voice app for errands">
+    <!-- ── Discover ── -->
+    <div id="discover" class="section">
+      <h2>Discover</h2>
 
-        <label>Voice Pitch (optional — boosts visibility)</label>
-        <button onclick="recordVoicePitch()">🎙 Record Voice Pitch</button>
-        <div id="voice-preview"></div>
-
-        <label>Public Teaser (shown to everyone — keywords + the high-level problem. Protects your secret sauce)</label>
-        <input id="idea-teaser" placeholder="Voice matching for last-mile errands, 3B market gap">
-        <small>Keywords help people discover your idea without revealing the full plan (e.g. voice, errands, logistics)</small>
-
-        <label>Full Vision (shown only to backers who unlock. Your secret sauce goes here.)</label>
-        <textarea id="idea-desc" placeholder="Detailed mechanism, execution plan, unfair advantage..."></textarea>
-
-        <label>Funding Goal (in Credits)</label>
-        <input id="goal" type="number" value="500">
-
-        <button onclick="submitIdea()" class="primary">Submit — teaser public, full pitch protected</button>
+      <div class="searchwrap">
+        <input id="q" class="search" type="search" placeholder="Search ideas, tags, creators…" oninput="onSearch()" autocomplete="off">
       </div>
-    </div>
 
-    <!-- Feed -->
-    <div id="feed" class="section hidden">
-      <h2>Hot Ideas</h2>
+      <div id="cat-chips" class="chips"></div>
+
+      <div class="toolbar">
+        <select id="sortby" class="minisel" onchange="onSort()" aria-label="Sort by">
+          <option value="trending">Trending</option>
+          <option value="newest">Newest</option>
+          <option value="ending">Ending soon</option>
+          <option value="funded">Most funded</option>
+          <option value="backed">Most backers</option>
+        </select>
+        <label class="togglebox"><input type="checkbox" id="lovedonly" onchange="onSort()"> ⭐ Loved</label>
+        <label class="togglebox"><input type="checkbox" id="followedonly" onchange="onSort()"> ♥ Following</label>
+      </div>
+
+      <div id="active-tags" class="activetags"></div>
       <p id="feed-sub" class="feed-sub"></p>
       <div id="idea-list" class="idea-grid"></div>
     </div>
 
-    <!-- My Ideas -->
+    <!-- ── Idea detail ── -->
+    <div id="detail" class="section hidden">
+      <button class="backbtn" onclick="showDiscover()">‹ Back to Discover</button>
+      <div id="detail-body"></div>
+    </div>
+
+    <!-- ── Submit ── -->
+    <div id="submit" class="section hidden">
+      <h2>Submit Your Idea</h2>
+      <p class="feed-sub">Submissions go through a short review before they go live — same as a real platform. You can preview the page first.</p>
+      <div class="form">
+        <label for="idea-title">Idea title</label>
+        <input id="idea-title" placeholder="Voice-powered errand matching" maxlength="60">
+
+        <label for="idea-sub">Subtitle <span class="hintlabel">one line, what it is</span></label>
+        <input id="idea-sub" placeholder="Last-mile errands matched by voice in under 10 seconds" maxlength="90">
+
+        <label for="idea-cat">Category</label>
+        <select id="idea-cat" class="live-select"></select>
+
+        <label>Cover <span class="hintlabel">the feed is visual — pick a mark</span></label>
+        <div id="cover-picker" class="coverpick"></div>
+
+        <label>Voice pitch <span class="hintlabel">optional — adds a 🎙 badge</span></label>
+        <button onclick="recordVoicePitch()">🎙 Record voice pitch</button>
+        <div id="voice-preview"></div>
+
+        <label for="idea-teaser">Public teaser <span class="hintlabel">everyone sees this — keywords become tags</span></label>
+        <input id="idea-teaser" placeholder="Voice matching for last-mile errands, 3B market gap">
+
+        <label for="idea-desc">Full vision <span class="hintlabel">only backers who unlock see this</span></label>
+        <textarea id="idea-desc" placeholder="Detailed mechanism, execution plan, unfair advantage…"></textarea>
+
+        <label for="idea-risks">Risks and challenges <span class="req">required</span></label>
+        <textarea id="idea-risks" placeholder="What could go wrong, and how you'd handle it. Tooling, suppliers, timeline, technical unknowns…"></textarea>
+        <small>This section's title is fixed and it cannot be skipped — backers use it to judge how openly you're describing the downside.</small>
+
+        <div class="row2">
+          <div>
+            <label for="goal">Funding goal <span class="hintlabel">Credits</span></label>
+            <input id="goal" type="number" value="500" min="50" oninput="onGoalChange()">
+          </div>
+          <div>
+            <label for="duration">Duration</label>
+            <select id="duration" class="live-select">
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="21">21 days</option>
+              <option value="30" selected>30 days (recommended)</option>
+              <option value="45">45 days</option>
+              <option value="60">60 days</option>
+            </select>
+          </div>
+        </div>
+        <small id="aon-note">All-or-nothing: if the goal isn't met by the deadline, every pledge is returned and you keep nothing.</small>
+
+        <label>Reward tiers <span class="hintlabel">tiers are the biggest funding lever — most pledges land in the low bands</span></label>
+        <div id="tier-rows"></div>
+        <button onclick="addTierRow()">+ Add tier</button>
+
+        <label class="checkline"><input type="checkbox" id="chk-rights"> I hold the rights to everything in this submission.</label>
+        <label class="checkline"><input type="checkbox" id="chk-ai"> I've disclosed any AI tools used (below) — or none were used.</label>
+        <input id="ai-disclosure" placeholder="AI tools used (optional)">
+
+        <button onclick="previewIdea()">👁 Preview page</button>
+        <button onclick="submitIdea()" class="primary">Submit for review</button>
+      </div>
+      <div id="preview-out"></div>
+    </div>
+
+    <!-- ── My Ideas ── -->
     <div id="mine" class="section hidden">
       <h2>💼 My Ideas</h2>
       <p id="mine-sub" class="feed-sub"></p>
       <div id="mine-list" class="idea-grid"></div>
     </div>
 
-    <!-- Live -->
+    <!-- ── Live ── -->
     <div id="live" class="section hidden">
       <h2>📡 Pitch Room</h2>
       <p class="feed-sub">Take an idea live. The room reacts in real time — hype converts into real votes on the feed. <b>5 Credits</b> to start a session.</p>
@@ -97,19 +162,26 @@
         <div class="hype-bar"><span id="hype-fill"></span></div>
         <div id="live-meter" class="live-meter"></div>
         <div id="live-reactions" class="live-reactions"></div>
-        <button id="live-end" class="primary" onclick="endPitch()">End pitch & bank the hype</button>
+        <button id="live-end" class="primary" onclick="endPitch()">End pitch &amp; bank the hype</button>
       </div>
     </div>
 
-    <!-- Activity log -->
+    <!-- ── Activity ── -->
     <div id="codex" class="section hidden">
       <h2>📓 Activity</h2>
       <div id="codex-list"></div>
     </div>
+
     <footer class="site-footer">
       <a href="https://hosuman08-netizen.github.io/legion-hub/">🎮 다른 앱 더보기</a>
     </footer>
   </div>
+
+  <!-- pledge sheet -->
+  <div id="sheet" class="sheet hidden" onclick="if(event.target===this)closeSheet()">
+    <div class="sheet-inner" id="sheet-inner"></div>
+  </div>
+  <div id="toast" class="toast hidden"></div>
 
   <script src="script.js"></script>
 <script>window.LEGION_APP='ideaforge';window.LEGION_ANALYTICS_URL='https://legion-analytics.hoyashi95.workers.dev';</script>
