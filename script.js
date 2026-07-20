@@ -146,6 +146,9 @@ function submitIdea() {
   ideas.unshift(idea);
   saveIdeas();
 
+  // Core loop completed: user submitted an idea (the representative "used the app" action).
+  if (window.legionTrack) window.legionTrack('activate');
+
   addToCodex(`Submitted “${title}”. Teaser is public, full pitch protected. Pitch energy ${surprise.toFixed(2)}.`);
 
   // Simple proof hash for submitter protection (timestamped record)
