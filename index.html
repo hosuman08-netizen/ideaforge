@@ -86,9 +86,19 @@
 
     <!-- Live -->
     <div id="live" class="section hidden">
-      <h2>Live Idea Pitches</h2>
-      <div class="live-item">Voice demo pitch • 89 watching • 5 Credits to join</div>
-      <button onclick="joinLive()">Join Live</button>
+      <h2>📡 Pitch Room</h2>
+      <p class="feed-sub">Take an idea live. The room reacts in real time — hype converts into real votes on the feed. <b>5 Credits</b> to start a session.</p>
+      <div id="live-setup"></div>
+      <div id="live-stage" class="hidden">
+        <div class="live-head">
+          <strong id="live-title"></strong>
+          <span id="live-watching" class="live-watching"></span>
+        </div>
+        <div class="hype-bar"><span id="hype-fill"></span></div>
+        <div id="live-meter" class="live-meter"></div>
+        <div id="live-reactions" class="live-reactions"></div>
+        <button id="live-end" class="primary" onclick="endPitch()">End pitch & bank the hype</button>
+      </div>
     </div>
 
     <!-- Activity log -->

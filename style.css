@@ -213,6 +213,37 @@ h3 { font-size: 15px; color: var(--dim); margin: 0 0 var(--s3); }
 .earn-pending { color: var(--gold); font-weight: 600; }
 .earn-life { color: var(--dim); }
 
+/* ── Pitch Room ── */
+.live-label { display: block; font-size: 12px; color: var(--dim); margin: var(--s3) 0 var(--s1); }
+.live-select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: var(--s3);
+  border-radius: var(--r);
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: var(--s2);
+}
+.live-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--s2); }
+.live-head strong { font-size: 15px; color: var(--danger); }
+.live-watching { font-size: 12px; color: var(--dim); }
+.hype-bar { height: 8px; background: var(--surface); border-radius: 999px; overflow: hidden; margin: var(--s2) 0; }
+.hype-bar > span { display: block; height: 100%; width: 0; background: var(--gold); border-radius: 999px; transition: width 400ms var(--ease); }
+.live-meter { font-size: 13px; color: var(--dim); margin: var(--s2) 0 var(--s3); }
+.live-meter b { color: var(--gold); }
+.live-reactions { display: flex; flex-direction: column; gap: var(--s1); min-height: 120px; margin-bottom: var(--s3); }
+.live-reactions .react {
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: var(--s1) var(--s3);
+  border-radius: var(--r);
+  animation: fade 260ms var(--ease);
+}
+
 .live-item, .notebook-entry {
   background: var(--card);
   border: 1px solid var(--line);

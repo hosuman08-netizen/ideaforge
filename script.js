@@ -216,8 +216,147 @@ function unlockIdea(id) {
   showFeed();
 }
 
-function joinLive() {
-  alert('Live pitches are coming soon in this demo.');
+// ── PITCH ROOM: take an idea live, the crowd reacts, hype converts to real votes. ──
+let _live = null; // { ideaId, hype, watching, timer, reactions }
+const PITCH_COST = 5;
+
+const REACTIONS = [
+  { txt: '🔥 love this', hype: 3 },
+  { txt: '👏 strong pitch', hype: 2 },
+  { txt: '👀 interesting', hype: 1 },
+  { txt: '💡 clever angle', hype: 2 },
+  { txt: '🤔 not sure', hype: -1 },
+  { txt: '🚀 take my credits', hype: 4 },
+  { txt: '😴 seen it before', hype: -2 },
+  { txt: '💬 tell me more', hype: 1 }
+];
+
+function renderLiveSetup() {
+  const box = document.getElementById('live-setup');
+  if (!box) return;
+  if (!wallet) {
+    box.innerHTML = '<p>Sign in to start a pitch session.</p>';
+    return;
+  }
+  // Prefer your own ideas; fall back to any idea you can pitch.
+  const own = ideas.filter(i => i.owner === wallet && !i.funded);
+  const pool = own.length ? own : ideas.filter(i => !i.funded);
+  if (pool.length === 0) {
+    box.innerHTML = '<p>No pitchable ideas yet. Submit one, then take it live.</p>';
+    return;
+  }
+  const opts = pool.slice(0, 8).map(i =>
+    `<option value="${i.id}">${escapeHtml(i.title)} — ${i.votes} votes</option>`
+  ).join('');
+  box.innerHTML = `
+    <label class="live-label">Pick an idea to pitch</label>
+    <select id="live-pick" class="live-select">${opts}</select>
+    <button class="primary" onclick="startPitch()">📡 Go Live — ${PITCH_COST} Credits</button>
+  `;
+}
+
+function showLive() {
+  hideAll();
+  setActiveNav("showLive");
+  document.getElementById('live').classList.remove('hidden');
+  // If a session is already running, keep showing the stage; else show setup.
+  if (_live) {
+    document.getElementById('live-setup').classList.add('hidden');
+    document.getElementById('live-stage').classList.remove('hidden');
+  } else {
+    document.getElementById('live-setup').classList.remove('hidden');
+    document.getElementById('live-stage').classList.add('hidden');
+    renderLiveSetup();
+  }
+}
+
+function startPitch() {
+  if (!wallet) { alert('Sign in first.'); return; }
+  if (_live) return;
+  if (credits < PITCH_COST) { alert(`Need ${PITCH_COST} Credits to go live. You have ${credits}.`); return; }
+  const pick = document.getElementById('live-pick');
+  const id = pick ? Number(pick.value) : null;
+  const idea = ideas.find(i => i.id === id);
+  if (!idea) { alert('Pick an idea to pitch.'); return; }
+
+  credits -= PITCH_COST;
+  updateWallet();
+
+  _live = { ideaId: id, hype: 0, watching: 20 + Math.floor(Math.random() * 40), reactions: [] };
+
+  document.getElementById('live-setup').classList.add('hidden');
+  const stage = document.getElementById('live-stage');
+  stage.classList.remove('hidden');
+  document.getElementById('live-title').textContent = `🔴 LIVE · ${idea.title}`;
+  document.getElementById('live-reactions').innerHTML = '';
+  renderLiveMeter();
+
+  addToCodex(`Went live pitching “${idea.title}”.`);
+
+  _live.timer = setInterval(tickPitch, 900);
+}
+
+function tickPitch() {
+  if (!_live) return;
+  const idea = ideas.find(i => i.id === _live.ideaId);
+  if (!idea) { endPitch(); return; }
+
+  // Base draw scales with the idea's real energy + current momentum.
+  const energy = (idea.surprise || 0.3) + Math.max(0, _live.hype) * 0.02;
+  _live.watching += Math.floor((Math.random() - 0.35) * 6 + energy * 4);
+  _live.watching = Math.max(5, _live.watching);
+
+  const r = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
+  _live.hype = Math.max(0, _live.hype + r.hype);
+  _live.reactions.unshift(r.txt);
+  if (_live.reactions.length > 6) _live.reactions.pop();
+
+  renderLiveMeter();
+}
+
+function renderLiveMeter() {
+  if (!_live) return;
+  const w = document.getElementById('live-watching');
+  const meter = document.getElementById('live-meter');
+  const fill = document.getElementById('hype-fill');
+  const feed = document.getElementById('live-reactions');
+  if (w) w.textContent = `👀 ${_live.watching} watching`;
+  const pct = Math.min(100, _live.hype * 4);
+  if (fill) fill.style.width = pct + '%';
+  if (meter) meter.innerHTML = `Hype <b>${_live.hype}</b> → converts to <b>${hypeToVotes(_live.hype)}</b> vote${hypeToVotes(_live.hype) === 1 ? '' : 's'}`;
+  if (feed) feed.innerHTML = _live.reactions.map(t => `<div class="react">${escapeHtml(t)}</div>`).join('');
+}
+
+// Diminishing-returns conversion so a longer pitch keeps mattering but can't runaway.
+function hypeToVotes(hype) {
+  return Math.min(15, Math.floor(Math.sqrt(Math.max(0, hype)) * 1.6));
+}
+
+function endPitch() {
+  if (!_live) return;
+  clearInterval(_live.timer);
+  const idea = ideas.find(i => i.id === _live.ideaId);
+  const votes = idea ? hypeToVotes(_live.hype) : 0;
+
+  if (idea && votes > 0) {
+    idea.votes += votes; // real votes into the same ranking system the feed uses
+    saveIdeas();
+    addToCodex(`🎤 Pitch of “${idea.title}” banked ${votes} vote${votes === 1 ? '' : 's'} from the room (hype ${_live.hype}).`);
+  } else if (idea) {
+    addToCodex(`Pitch of “${idea.title}” ended — the room stayed quiet, no votes banked.`);
+  }
+
+  const title = idea ? idea.title : 'your idea';
+  _live = null;
+
+  document.getElementById('live-stage').classList.add('hidden');
+  document.getElementById('live-setup').classList.remove('hidden');
+  renderLiveSetup();
+
+  alert(votes > 0
+    ? `Pitch over! “${title}” gained ${votes} real votes and climbed the Hot feed.`
+    : `Pitch over. The room didn’t bite this time — try a higher-energy idea.`);
+  showFeed();
 }
 
 function showFeed() {
