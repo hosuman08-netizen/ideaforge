@@ -1,3 +1,6 @@
+
+/* LEGION_WAVE_49_session_counter */
+try{if(!sessionStorage.getItem('lw_p12_idea_pla_session_counter')){sessionStorage.setItem('lw_p12_idea_pla_session_counter','1');localStorage.setItem('lw_p12_idea_pla_session_counter',String((+(localStorage.getItem('lw_p12_idea_pla_session_counter')||0))+1));}}catch(e){}
 // IdeaForge — pitch an idea, set a goal and a deadline, offer reward tiers,
 // let the crowd vote / comment / back it. All-or-nothing.
 // FICTIONAL DEMO. In-app tokens only. No real money, investment, returns or equity.
