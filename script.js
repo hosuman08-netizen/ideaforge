@@ -16,7 +16,8 @@ let me = JSON.parse(localStorage.getItem('p12_me') || 'null') || {
   voteDay: todayKey(),
   votesUsed: 0,
   unlockedIds: [],
-  following: []
+  following: [],
+  likedComments: []
 };
 
 const DAILY_VOTES = 10;
@@ -95,6 +96,61 @@ function isUrgent(idea) {
   return idea.status === 'live' && idea.endsAt && (idea.endsAt - Date.now()) < 3 * DAY;
 }
 
+// Deterministic 32-bit string hash (FNV-1a). Used to reconstruct a stable
+// backer ledger and stable comment ids — never Math.random at render time.
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  s = String(s == null ? '' : s);
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+// ── Reward fulfillment (the creator-side lifecycle every platform tracks) ──
+const FULFILL = [
+  { id: 'collecting', label: 'Collecting info', hint: 'Gathering shipping/details from backers.' },
+  { id: 'preparing',  label: 'In production',   hint: 'Rewards are being made.' },
+  { id: 'shipping',   label: 'Shipping',        hint: 'Rewards are going out to backers.' },
+  { id: 'delivered',  label: 'Delivered',       hint: 'All backers in this tier have their reward.' }
+];
+function fulfillStage(idea, tierId) {
+  const s = idea.fulfillment && idea.fulfillment[tierId];
+  return FULFILL.find(f => f.id === s) || FULFILL[0];
+}
+
+// Deterministic pledge ledger reconstructed from the backer roster so the
+// creator report always reconciles exactly to idea.raised. Real pledges append
+// live at pledge time. Seed/demo backers are labelled simulated, never faked as
+// real people — the amounts are a stable distribution of the shown total.
+function synthLedger(idea) {
+  const backers = (idea.backers || []).slice();
+  if (!backers.length) return [];
+  const weights = backers.map(b => 0.55 + (hashStr(b + '|w|' + idea.id) % 1000) / 1000); // 0.55–1.55
+  const wsum = weights.reduce((a, b) => a + b, 0) || 1;
+  const target = Math.max(idea.raised || 0, backers.length * 5);
+  let amts = weights.map(w => Math.max(5, Math.round(target * w / wsum)));
+  if (idea.raised > 0) {                       // reconcile the sum to the shown total, exactly
+    let diff = idea.raised - amts.reduce((a, b) => a + b, 0);
+    const order = amts.map((_, i) => i).sort((x, y) => amts[y] - amts[x]);
+    let k = 0, guard = 0;
+    while (diff !== 0 && guard++ < 200000) {
+      const i = order[k % order.length]; k++;
+      const step = diff > 0 ? 1 : -1;
+      if (amts[i] + step >= 5) { amts[i] += step; diff -= step; }
+      else if (step < 0) continue;
+    }
+  }
+  const tiersSorted = (idea.tiers || []).slice().sort((a, b) => a.amount - b.amount);
+  const start = idea.launchedAt || idea.createdAt || Date.now();
+  const span = Math.max(HOUR, (Math.min(Date.now(), idea.endsAt || Date.now()) - start));
+  return backers.map((b, i) => {
+    const amt = amts[i];
+    let tid = 0;
+    tiersSorted.forEach(t => { if (amt >= t.amount) tid = t.id; });
+    const frac = (hashStr(b + '|t|' + idea.id) % 1000) / 1000;
+    return { backer: b, tierId: tid, amount: amt, time: start + Math.floor(frac * span), sim: true };
+  }).sort((a, b) => a.time - b.time);
+}
+
 // ── Schema / migration ────────────────────────────────────────────────
 function defaultTiers(goal) {
   const g = Math.max(50, goal || 500);
@@ -124,6 +180,12 @@ function normalizeIdea(idea) {
   if (!Array.isArray(idea.tiers) || !idea.tiers.length) idea.tiers = defaultTiers(idea.goal);
   if (!Array.isArray(idea.updates)) idea.updates = [];
   if (!Array.isArray(idea.comments)) idea.comments = [];
+  idea.comments.forEach(c => {
+    if (typeof c.likes !== 'number') c.likes = 0;
+    if (!('parentId' in c)) c.parentId = null;
+    if (typeof c.pinned !== 'boolean') c.pinned = false;
+    if (c.id == null) c.id = hashStr((c.author || '') + '|' + (c.time || 0) + '|' + (c.text || '').slice(0, 12));
+  });
   if (!Array.isArray(idea.faq)) idea.faq = [];
   if (typeof idea.flags !== 'number') idea.flags = 0;
   if (typeof idea.staffPick !== 'boolean') idea.staffPick = false;
@@ -136,6 +198,8 @@ function normalizeIdea(idea) {
   if (typeof idea.pendingEarnings !== 'number') idea.pendingEarnings = 0;
   if (typeof idea.lifetimeEarnings !== 'number') idea.lifetimeEarnings = 0;
   if (typeof idea.simEarnings !== 'number') idea.simEarnings = 0;
+  if (!idea.fulfillment || typeof idea.fulfillment !== 'object') idea.fulfillment = {};
+  if (!Array.isArray(idea.pledgeLog)) idea.pledgeLog = synthLedger(idea);
   idea.funded = idea.status === 'funded';
   return idea;
 }
@@ -510,6 +574,7 @@ function renderDetail() {
     ['faq', 'FAQ ' + idea.faq.length],
     ['risks', 'Risks']
   ];
+  if (isOwner) tabs.push(['backers', '🛠 Backers ' + idea.backers.length]);
 
   let cta = '';
   if (idea.status === 'review') {
@@ -588,6 +653,7 @@ function renderTab(idea, isOwner) {
   if (_view.tab === 'comments') return tabComments(idea);
   if (_view.tab === 'faq')      return tabFaq(idea, isOwner);
   if (_view.tab === 'risks')    return tabRisks(idea);
+  if (_view.tab === 'backers')  return isOwner ? tabBackers(idea) : tabStory(idea);
   return tabStory(idea);
 }
 
@@ -626,6 +692,11 @@ function tabRewards(idea) {
     const limited = t.limit > 0;
     const left = limited ? Math.max(0, t.limit - t.claimed) : null;
     const soldOut = limited && left === 0;
+    const stage = fulfillStage(idea, t.id);
+    const showStage = idea.status === 'funded' || stage.id !== 'collecting';
+    const stageBadge = showStage
+      ? '<div class="tierfulfil" title="' + escapeHtml(stage.hint) + '">📦 Reward status: <b>' + stage.label + '</b></div>'
+      : '';
     return '<div class="tier' + (t.featured ? ' featured' : '') + (soldOut ? ' soldout' : '') + '">' +
       (t.featured ? '<div class="tierflag">Most popular</div>' : '') +
       '<div class="tieramt">' + t.amount.toLocaleString() + ' cr</div>' +
@@ -637,6 +708,7 @@ function tabRewards(idea) {
                  : '<span>Unlimited</span>') +
         '<span>' + t.claimed + ' backer' + (t.claimed === 1 ? '' : 's') + '</span>' +
       '</div>' +
+      stageBadge +
       (soldOut ? '<button disabled>All claimed</button>'
                : '<button onclick="openPledge(' + idea.id + ',' + t.id + ')">' + (late ? 'Late pledge' : 'Select') + ' — ' + t.amount + ' cr</button>') +
     '</div>';
@@ -667,6 +739,45 @@ function tabUpdates(idea, isOwner) {
   return composer + '<div class="updates">' + items + '</div>';
 }
 
+function commentEl(idea, c, isReply) {
+  const isOwner = wallet && idea.owner === wallet;
+  const liked = me.likedComments.includes(c.id);
+  const replies = isReply ? [] : idea.comments
+    .filter(x => x.parentId === c.id)
+    .sort((a, b) => a.time - b.time);
+
+  const actions = '<div class="cmactions">' +
+    '<button class="cmlike' + (liked ? ' on' : '') + '" onclick="likeComment(' + idea.id + ',' + c.id + ')">♥ ' + (c.likes || 0) + '</button>' +
+    (wallet && !isReply ? '<button class="cmreply" onclick="startReply(' + idea.id + ',' + c.id + ')">↩ Reply' + (replies.length ? ' (' + replies.length + ')' : '') + '</button>' : '') +
+    (isOwner ? '<button class="cmpin' + (c.pinned ? ' on' : '') + '" onclick="pinComment(' + idea.id + ',' + c.id + ')">' + (c.pinned ? '📌 Pinned' : '📌 Pin') + '</button>' : '') +
+  '</div>';
+
+  const replyComposer = (!isReply && _view.replyTo === c.id && wallet)
+    ? '<div class="composer replybox">' +
+        '<textarea id="cm-reply-' + c.id + '" placeholder="Reply to ' + escapeHtml(backerLabel(c.author)) + '…"></textarea>' +
+        '<div class="cmactions"><button class="primary slim" onclick="postReply(' + idea.id + ',' + c.id + ')">Post reply</button>' +
+        '<button class="slim" onclick="cancelReply()">Cancel</button></div>' +
+      '</div>'
+    : '';
+
+  const repliesHtml = replies.length
+    ? '<div class="cmreplies">' + replies.map(r => commentEl(idea, r, true)).join('') + '</div>'
+    : '';
+
+  return '<div class="comment' + (c.creator ? ' iscreator' : '') + (isReply ? ' reply' : '') + (c.pinned ? ' pinned' : '') + '">' +
+      (c.pinned && !isReply ? '<div class="pinnedflag">📌 Pinned by creator</div>' : '') +
+      '<div class="cmhead"><div class="ravatar sm">' + escapeHtml(backerLabel(c.author).slice(0, 2).toUpperCase()) + '</div>' +
+        '<b>' + escapeHtml(backerLabel(c.author)) + '</b>' +
+        (c.creator ? '<span class="badge good">Creator</span>' : '') +
+        (c.backer ? '<span class="badge">Backer</span>' : '') +
+        '<span class="tinynote">' + new Date(c.time).toLocaleDateString() + '</span></div>' +
+      '<p class="prose">' + escapeHtml(c.text) + '</p>' +
+      actions +
+      replyComposer +
+      repliesHtml +
+  '</div>';
+}
+
 function tabComments(idea) {
   const composer = wallet
     ? '<div class="composer">' +
@@ -675,17 +786,78 @@ function tabComments(idea) {
       '</div>'
     : '<div class="notice">Sign in to comment.</div>';
 
-  if (!idea.comments.length) return composer + '<div class="empty">No comments yet. Be first.</div>';
+  const tops = idea.comments.filter(c => !c.parentId);
+  if (!tops.length) return composer + '<div class="empty">No comments yet. Be first.</div>';
 
-  const items = idea.comments.slice().reverse().map(c =>
-    '<div class="comment' + (c.creator ? ' iscreator' : '') + '">' +
-      '<div class="cmhead"><b>' + escapeHtml(c.author) + '</b>' +
-        (c.creator ? '<span class="badge good">Creator</span>' : '') +
-        (c.backer ? '<span class="badge">Backer</span>' : '') +
-        '<span class="tinynote">' + new Date(c.time).toLocaleDateString() + '</span></div>' +
-      '<p class="prose">' + escapeHtml(c.text) + '</p>' +
-    '</div>').join('');
-  return composer + '<div class="comments">' + items + '</div>';
+  const sort = _view.cmSort || 'top';
+  const toolbar = tops.length > 1
+    ? '<div class="cmsort">' +
+        '<button class="cmsortbtn' + (sort === 'top' ? ' on' : '') + '" onclick="setCommentSort(\'top\')">Top</button>' +
+        '<button class="cmsortbtn' + (sort === 'new' ? ' on' : '') + '" onclick="setCommentSort(\'new\')">Newest</button>' +
+      '</div>'
+    : '';
+
+  const ordered = tops.slice().sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;   // pinned always first
+    if (sort === 'top') return (b.likes || 0) - (a.likes || 0) || b.time - a.time;
+    return b.time - a.time;
+  });
+
+  const items = ordered.map(c => commentEl(idea, c, false)).join('');
+  return composer + toolbar + '<div class="comments">' + items + '</div>';
+}
+
+function setCommentSort(s) { _view.cmSort = s; renderDetail(); }
+function startReply(ideaId, cid) {
+  if (!requireWallet('reply')) return;
+  _view.replyTo = (_view.replyTo === cid ? null : cid);
+  renderDetail();
+  if (_view.replyTo) { const el = document.getElementById('cm-reply-' + cid); if (el) el.focus(); }
+}
+function cancelReply() { _view.replyTo = null; renderDetail(); }
+
+function postReply(ideaId, parentId) {
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea || !requireWallet('reply')) return;
+  const el = document.getElementById('cm-reply-' + parentId);
+  const text = el ? (el.value || '').trim() : '';
+  if (!text) { toast('Write a reply first.', 'warn'); return; }
+  const now = Date.now();
+  idea.comments.push({
+    id: hashStr(wallet + '|' + now + '|' + text.slice(0, 12)),
+    author: wallet, text: text, time: now, parentId: parentId, likes: 0, pinned: false,
+    creator: idea.owner === wallet, backer: (me.stakes[ideaId] || 0) > 0
+  });
+  saveIdeas();
+  _view.replyTo = null;
+  addToCodex('Replied on “' + idea.title + '”.');
+  toast('Reply posted.');
+  renderDetail();
+}
+
+function likeComment(ideaId, cid) {
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea || !requireWallet('like a comment')) return;
+  const c = idea.comments.find(x => x.id === cid);
+  if (!c) return;
+  const i = me.likedComments.indexOf(cid);
+  if (i >= 0) { me.likedComments.splice(i, 1); c.likes = Math.max(0, (c.likes || 0) - 1); }
+  else { me.likedComments.push(cid); c.likes = (c.likes || 0) + 1; }
+  saveIdeas(); saveMe();
+  renderDetail();
+}
+
+function pinComment(ideaId, cid) {
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea || idea.owner !== wallet) return;
+  const c = idea.comments.find(x => x.id === cid);
+  if (!c || c.parentId) return;
+  const wasPinned = c.pinned;
+  idea.comments.forEach(x => { if (!x.parentId) x.pinned = false; });  // single pin, like the category
+  c.pinned = !wasPinned;
+  saveIdeas();
+  toast(c.pinned ? 'Pinned to the top of comments.' : 'Unpinned.');
+  renderDetail();
 }
 
 function tabFaq(idea, isOwner) {
@@ -714,6 +886,119 @@ function tabRisks(idea) {
       : '<p class="prose teaser">This creator submitted before the risks section was required.</p>') +
     '<div class="tinynote">This section\'s title is fixed by the platform and every creator must complete it. It exists so you can judge how openly a creator describes what could go wrong.</div>' +
   '</div>';
+}
+
+// ── Backer report (creator-only management surface) ───────────────────
+function backerLabel(name) {
+  if (name === wallet) return 'You';
+  const s = String(name || '');
+  if (s.indexOf('backer-') === 0) return 'Backer ' + s.slice(7).toUpperCase();
+  if (s.indexOf('user-') === 0) return s.slice(0, 9);
+  if (s.indexOf('seed-') === 0) return s.slice(5).replace(/^./, c => c.toUpperCase());
+  return s;
+}
+
+function tabBackers(idea) {
+  const log = (idea.pledgeLog || []).slice().sort((a, b) => b.amount - a.amount);
+  const backerCount = idea.backers.length;
+  const avg = backerCount ? Math.round(idea.raised / Math.max(1, log.length)) : 0;
+  const closed = idea.status === 'funded' || idea.status === 'failed';
+
+  const summary =
+    '<div class="breport">' +
+      '<div class="bmetric"><b>' + idea.raised.toLocaleString() + '</b><span>Credits raised</span></div>' +
+      '<div class="bmetric"><b>' + backerCount + '</b><span>backers</span></div>' +
+      '<div class="bmetric"><b>' + avg.toLocaleString() + '</b><span>avg pledge</span></div>' +
+    '</div>';
+
+  // Reward tier breakdown + fulfillment lifecycle
+  const tierRows = idea.tiers.slice().sort((a, b) => a.amount - b.amount).map(t => {
+    const entries = log.filter(e => e.tierId === t.id);
+    const sum = entries.reduce((s, e) => s + e.amount, 0);
+    const share = idea.raised > 0 ? Math.round((sum / idea.raised) * 100) : 0;
+    const stage = fulfillStage(idea, t.id);
+    const idx = FULFILL.findIndex(f => f.id === stage.id);
+    const dots = FULFILL.map((f, i) =>
+      '<span class="fstep' + (i <= idx ? ' done' : '') + (i === idx ? ' now' : '') + '" title="' + f.label + '"></span>'
+    ).join('');
+    const canManage = idea.status !== 'review';
+    const controls = idea.status === 'failed'
+      ? '<span class="tinynote">Campaign didn\'t fund — no rewards to fulfil.</span>'
+      : (canManage
+        ? '<div class="fctl">' +
+            (idx > 0 ? '<button class="fbtn" onclick="stepFulfillment(' + idea.id + ',' + t.id + ',-1)">‹ back</button>' : '') +
+            '<span class="fstage">' + stage.label + '</span>' +
+            (idx < FULFILL.length - 1
+              ? '<button class="fbtn primaryish" onclick="stepFulfillment(' + idea.id + ',' + t.id + ',1)">Mark ' + FULFILL[idx + 1].label + ' ›</button>'
+              : '<span class="fdone">✓ complete</span>') +
+          '</div>'
+        : '');
+    return '<div class="frow">' +
+      '<div class="frow-top">' +
+        '<div><span class="tieramt">' + t.amount.toLocaleString() + ' cr</span> <b class="ftitle">' + escapeHtml(t.title) + '</b></div>' +
+        '<span class="fcount">' + entries.length + ' backer' + (entries.length === 1 ? '' : 's') + '</span>' +
+      '</div>' +
+      '<div class="fbar"><span style="width:' + Math.min(100, share) + '%"></span></div>' +
+      '<div class="frow-meta"><span>' + sum.toLocaleString() + ' cr · ' + share + '% of total</span>' +
+        (t.limit > 0 ? '<span>' + t.claimed + '/' + t.limit + ' claimed</span>' : '<span>unlimited</span>') + '</div>' +
+      '<div class="fsteps">' + dots + '</div>' +
+      controls +
+    '</div>';
+  }).join('');
+
+  const noReward = log.filter(e => !e.tierId);
+  const noRewBlock = noReward.length
+    ? '<div class="frow ghost"><div class="frow-top"><b class="ftitle">No-reward pledges</b>' +
+      '<span class="fcount">' + noReward.length + '</span></div>' +
+      '<div class="frow-meta"><span>' + noReward.reduce((s, e) => s + e.amount, 0).toLocaleString() + ' cr · backed the idea, claimed nothing</span></div></div>'
+    : '';
+
+  // Backer roster
+  const shown = log.slice(0, 8);
+  const roster = log.length
+    ? '<details class="roster"' + (closed ? ' open' : '') + '><summary>Backer roster (' + log.length + ')</summary>' +
+        '<div class="rlist">' + log.map(e => {
+          const t = idea.tiers.find(x => x.id === e.tierId);
+          return '<div class="rrow">' +
+            '<div class="ravatar">' + escapeHtml(backerLabel(e.backer).slice(0, 2).toUpperCase()) + '</div>' +
+            '<div class="rmain"><div class="rname">' + escapeHtml(backerLabel(e.backer)) +
+              (e.sim ? '<span class="simdot" title="simulated demo backer">sim</span>' : '') + '</div>' +
+              '<div class="rmeta">' + (t ? escapeHtml(t.title) : 'No reward') + ' · ' + new Date(e.time).toLocaleDateString() + '</div></div>' +
+            '<div class="ramt">' + e.amount.toLocaleString() + ' cr</div>' +
+          '</div>';
+        }).join('') + '</div>' +
+      '</details>'
+    : '<div class="empty">No backers yet. Share the page and post updates to bring the first ones in.</div>';
+
+  const msgCta = backerCount
+    ? '<button onclick="setTab(\'updates\')">📣 Post an update to all ' + backerCount + ' backers</button>'
+    : '';
+
+  const simNote = log.some(e => e.sim)
+    ? '<div class="tinynote">Rows marked <b>sim</b> are simulated demo backers, not real people. Real pledges you take appear here unmarked. Amounts are a fixed reconstruction that sums exactly to the ' + idea.raised.toLocaleString() + ' cr shown.</div>'
+    : '';
+
+  return summary +
+    '<h3 class="bsub">Reward tiers &amp; fulfillment</h3>' +
+    '<div class="frows">' + tierRows + noRewBlock + '</div>' +
+    '<h3 class="bsub">Backers</h3>' +
+    msgCta +
+    roster +
+    simNote;
+}
+
+function stepFulfillment(ideaId, tierId, dir) {
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea || idea.owner !== wallet) return;
+  const cur = FULFILL.findIndex(f => f.id === (idea.fulfillment[tierId] || 'collecting'));
+  const next = Math.max(0, Math.min(FULFILL.length - 1, cur + dir));
+  if (next === cur) return;
+  idea.fulfillment[tierId] = FULFILL[next].id;
+  saveIdeas();
+  const t = idea.tiers.find(x => x.id === tierId);
+  addToCodex('Reward “' + (t ? t.title : 'tier') + '” on “' + idea.title + '” → ' + FULFILL[next].label + '.');
+  if (dir > 0) toast('Marked ' + FULFILL[next].label + '. Backers see this on the reward.');
+  renderDetail();
 }
 
 // ── Follow / share / flag ─────────────────────────────────────────────
@@ -844,6 +1129,8 @@ function confirmPledge() {
   me.stakes[idea.id] = (me.stakes[idea.id] || 0) + amt;
   if (!me.pledges[idea.id]) me.pledges[idea.id] = [];
   me.pledges[idea.id].push({ tierId: _pledge.tierId, amount: amt, time: Date.now() });
+  if (!Array.isArray(idea.pledgeLog)) idea.pledgeLog = [];
+  idea.pledgeLog.push({ backer: wallet, tierId: _pledge.tierId, amount: amt, time: Date.now(), sim: false });
   if (tier) tier.claimed += 1;
 
   const royalty = Math.floor(amt * 0.05);
@@ -874,10 +1161,13 @@ function postComment(id) {
   const el = document.getElementById('cm-body');
   const text = (el.value || '').trim();
   if (!text) { toast('Write something first.', 'warn'); return; }
+  const now = Date.now();
   idea.comments.push({
-    id: Date.now(), author: wallet, text: text, time: Date.now(),
+    id: hashStr(wallet + '|' + now + '|' + text.slice(0, 12)),
+    author: wallet, text: text, time: now, parentId: null, likes: 0, pinned: false,
     creator: idea.owner === wallet, backer: (me.stakes[id] || 0) > 0
   });
+  el.value = '';
   saveIdeas();
   addToCodex('Commented on “' + idea.title + '”.');
   toast('Comment posted.');
@@ -1501,6 +1791,7 @@ function initP12() {
   if (!ideas.length) { ideas = seedIdeas(); saveIdeas(); }
   if (!me.pledges) me.pledges = {};
   if (!me.following) me.following = [];
+  if (!Array.isArray(me.likedComments)) me.likedComments = [];
   if (!me.createdAt) me.createdAt = Date.now();
   saveMe();
 

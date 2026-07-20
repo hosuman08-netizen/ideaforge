@@ -326,6 +326,93 @@ h3 { font-size: 14px; color: var(--dim); margin: var(--s5) 0 var(--s3); font-wei
 .riskblock { background: var(--card); border: 1px solid var(--line); border-left: 2px solid var(--danger); border-radius: var(--r); padding: var(--s4); }
 .riskhead { font-size: 13px; font-weight: 700; margin-bottom: var(--s3); letter-spacing: .01em; }
 
+/* ── Reward fulfillment badge (backer-facing) ── */
+.tierfulfil {
+  font-size: 11px; color: var(--dim); margin: 0 0 var(--s3);
+  padding: var(--s1) var(--s2); border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--line);
+}
+.tierfulfil b { color: var(--good); font-weight: 600; }
+
+/* ── Backer report (creator-only) ── */
+.breport { display: flex; gap: var(--s2); margin-bottom: var(--s2); }
+.bmetric {
+  flex: 1; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--r); padding: var(--s3); text-align: center;
+}
+.bmetric b { display: block; font-size: 19px; color: var(--gold); font-weight: 700; }
+.bmetric span { font-size: 10px; color: var(--dim); }
+.bsub { margin: var(--s5) 0 var(--s3); }
+
+.frows { display: grid; gap: var(--s3); }
+.frow { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s4); }
+.frow.ghost { opacity: .8; border-style: dashed; }
+.frow-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); }
+.frow-top .tieramt { font-size: 13px; }
+.ftitle { font-size: 13px; font-weight: 600; }
+.fcount { font-size: 11px; color: var(--dim); white-space: nowrap; }
+.fbar { height: 5px; background: var(--surface); border-radius: 999px; overflow: hidden; margin: var(--s2) 0; }
+.fbar > span { display: block; height: 100%; background: var(--gold); border-radius: 999px; transition: width 500ms var(--ease); }
+.frow-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); }
+
+.fsteps { display: flex; gap: 6px; margin: var(--s3) 0 var(--s2); }
+.fstep {
+  flex: 1; height: 4px; border-radius: 999px; background: var(--line);
+  transition: background 260ms var(--ease);
+}
+.fstep.done { background: var(--good); }
+.fstep.now { background: var(--gold); }
+
+.fctl { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s1); }
+.fstage { font-size: 12px; color: var(--gold); font-weight: 600; }
+.fbtn { font-size: 11px; padding: var(--s1) var(--s2); }
+.fbtn.primaryish { border-color: var(--gold); color: var(--gold); }
+.fbtn.primaryish:hover { background: var(--gold-soft); }
+.fdone { font-size: 12px; color: var(--good); font-weight: 600; margin-left: auto; }
+
+.roster { margin-top: var(--s3); }
+.roster > summary {
+  font-size: 13px; color: var(--dim); cursor: pointer; padding: var(--s2) 0;
+  list-style: none;
+}
+.roster > summary::-webkit-details-marker { display: none; }
+.roster > summary::before { content: '▸ '; color: var(--gold); }
+.roster[open] > summary::before { content: '▾ '; }
+.rlist { display: grid; gap: var(--s2); margin-top: var(--s2); }
+.rrow { display: flex; align-items: center; gap: var(--s3); background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s2) var(--s3); }
+.ravatar {
+  width: 30px; height: 30px; border-radius: 999px; flex: none;
+  background: var(--gold-soft); border: 1px solid var(--line); color: var(--gold);
+  display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+}
+.ravatar.sm { width: 22px; height: 22px; font-size: 9px; }
+.rmain { flex: 1; min-width: 0; }
+.rname { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.rmeta { font-size: 10px; color: var(--dim); }
+.ramt { font-size: 13px; color: var(--gold); font-weight: 600; white-space: nowrap; }
+.simdot { font-size: 8px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 5px; }
+
+/* ── Comments: threading, likes, sort, pin ── */
+.cmsort { display: flex; gap: var(--s1); margin-bottom: var(--s3); }
+.cmsortbtn { font-size: 11px; padding: var(--s1) var(--s3); border-radius: 999px; }
+.cmsortbtn.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+.cmhead .ravatar.sm { margin-right: 2px; }
+.cmactions { display: flex; gap: var(--s2); margin-top: var(--s2); flex-wrap: wrap; }
+.cmactions button { font-size: 11px; padding: 3px var(--s2); color: var(--dim); }
+.cmlike.on { color: var(--danger); border-color: var(--danger); }
+.cmpin.on { color: var(--gold); border-color: var(--gold); }
+.cmreplies {
+  margin: var(--s3) 0 0 var(--s3); padding-left: var(--s3);
+  border-left: 2px solid var(--line); display: grid; gap: var(--s2);
+}
+.comment.reply { background: var(--surface); padding: var(--s3); }
+.comment.pinned { border-color: var(--gold); }
+.pinnedflag { font-size: 10px; color: var(--gold); margin-bottom: var(--s2); }
+.replybox { margin-top: var(--s2); margin-bottom: 0; }
+.replybox textarea { height: 56px; }
+button.slim { width: auto; padding: var(--s1) var(--s3); font-size: 12px; margin-top: 0; }
+button.primary.slim { display: inline-block; }
+
 /* ── Form ── */
 .form label { display: block; font-size: 12px; color: var(--dim); margin: var(--s4) 0 var(--s1); }
 .hintlabel { opacity: .65; font-weight: 400; }
