@@ -573,6 +573,45 @@ function statusPill(idea) {
   return '<span class="pill' + (isUrgent(idea) ? ' urgent' : '') + '" data-countdown="' + idea.id + '">' + timeLeft(idea) + '</span>';
 }
 
+function backerInitials(name) {
+  const lab = backerLabel(name);
+  const s = String(lab || '?').replace(/[^A-Za-z0-9가-힣]/g, '');
+  return (s.slice(0, 2) || '?').toUpperCase();
+}
+
+/* GOLD50 TOP3: 소셜프루프 — 기존 backers/unlocks/comments만. 가짜 금액 추가 없음. */
+function backerStackHtml(idea) {
+  const names = (idea.backers || []).slice(0, 5);
+  const n = (idea.backers || []).length;
+  const u = (idea.unlocks || []).length;
+  const faces = names.map(function (b, i) {
+    return '<span class="bstack-face" style="--i:' + i + '" title="simulated backer">' +
+      escapeHtml(backerInitials(b)) + '</span>';
+  }).join('');
+  const more = n > 5 ? '<span class="bstack-more">+' + (n - 5) + '</span>' : '';
+  const unlockLine = u
+    ? (u + ' unlocked the pitch')
+    : '0 unlocked the pitch';
+  return '<div class="proof">' +
+    '<div class="bstack" aria-label="' + n + ' simulated backers">' + faces + more + '</div>' +
+    '<span class="proof-n">' + n + ' backer' + (n === 1 ? '' : 's') + ' · ' + unlockLine + '</span>' +
+    '<span class="tinynote">simulated roster · in-app tokens only</span>' +
+  '</div>';
+}
+
+function storyCommentsPeek(idea) {
+  const tops = (idea.comments || []).filter(function (c) { return !c.parentId; });
+  if (!tops.length) return '';
+  const last = tops.slice().sort(function (a, b) { return (b.time || 0) - (a.time || 0); }).slice(0, 2);
+  const items = last.map(function (c) {
+    return '<div class="cmpeek"><b>' + escapeHtml(backerLabel(c.author)) + '</b> ' +
+      escapeHtml(String(c.text || '').slice(0, 90)) + '</div>';
+  }).join('');
+  return '<div class="story-cm"><div class="upmeta">Recent comments · local thread · simulated</div>' +
+    items +
+    '<button type="button" class="ghosty" onclick="setTab(\'comments\')">Open thread</button></div>';
+}
+
 function ideaCard(idea, rank) {
   const p = Math.min(100, Math.floor(pct(idea)));
   const over = pct(idea) > 100;
@@ -602,6 +641,7 @@ function ideaCard(idea, rank) {
       '<div class="bar' + (over ? ' over' : '') + '"><span style="width:' + p + '%"></span></div>' +
       '<div class="meta"><b>' + Math.floor(pct(idea)) + '%</b> · ' + idea.raised.toLocaleString() + ' / ' + idea.goal.toLocaleString() + ' cr · ' +
         idea.backers.length + ' backer' + (idea.backers.length === 1 ? '' : 's') + '</div>' +
+      backerStackHtml(idea) +
       '<div class="stats">' +
         '<button class="votebtn' + (iVoted ? ' voted' : '') + '" onclick="voteIdea(' + idea.id + ',event)">▲ ' + idea.votes + (iVoted ? ' ✓' : '') + '</button>' +
         '<span class="cardsignals">💬 ' + idea.comments.length + (idea.updates.length ? ' · 📣 ' + idea.updates.length : '') + (idea.voiceUrl ? ' · 🎙' : '') + '</span>' +
@@ -746,6 +786,7 @@ function renderDetail() {
           '<div class="stat"><b>' + idea.backers.length + '</b><span>backers</span></div>' +
           '<div class="stat"><b data-countdown-short="' + idea.id + '">' + (idea.status === 'live' ? timeLeftShort(idea) : '—') + '</b><span>to go</span></div>' +
         '</div>' +
+        backerStackHtml(idea) +
       '</div>' +
     '</div>' +
 
@@ -818,7 +859,7 @@ function tabStory(idea) {
         '<div class="tinynote">70% of that goes to the creator. Backing at any tier also unlocks it.</div>' +
       '</div>';
   }
-  return body + storyCampaignExtras(idea);
+  return body + storyCommentsPeek(idea) + storyCampaignExtras(idea);
 }
 
 function tabRewards(idea) {
