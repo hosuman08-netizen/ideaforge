@@ -181,7 +181,40 @@ h3 { font-size: 14px; color: var(--dim); margin: var(--s5) 0 var(--s3); font-wei
   background: linear-gradient(135deg, hsl(var(--h) 42% 22%), hsl(calc(var(--h) + 40) 34% 12%));
   display: flex; align-items: center; justify-content: center;
 }
+.cover.dense { height: 112px; }
 .cover .mark { font-size: 34px; opacity: .92; }
+/* GOLD50 #5: cover + cat chip + voice energy + goal% on one screen */
+.cover-dock {
+  position: absolute; left: var(--s2); right: var(--s2); bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.catchip {
+  font-size: 10px; color: var(--gold);
+  background: rgba(10,8,6,.72); border: 1px solid var(--gold);
+  padding: 1px 8px; border-radius: 999px;
+}
+.goalchip {
+  margin-left: auto; font-size: 11px; font-weight: 700; color: var(--gold);
+  background: rgba(10,8,6,.72); padding: 1px 7px; border-radius: 999px;
+}
+.vedot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: rgba(10,8,6,.5);
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+}
+.vedot i {
+  width: calc(4px + var(--e) * 8px); height: calc(4px + var(--e) * 8px);
+  border-radius: 50%; background: var(--gold);
+  opacity: calc(0.4 + var(--e) * 0.6);
+  box-shadow: 0 0 calc(var(--e) * 8px) var(--gold);
+}
+.cover-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+  background: rgba(10,8,6,.45);
+}
+.cover-bar > span { display: block; height: 100%; background: var(--gold); }
+.cover-bar.over > span { background: var(--good); }
 .loved {
   position: absolute; top: var(--s2); left: var(--s2);
   font-size: 10px; color: var(--gold); background: rgba(10,8,6,.72);

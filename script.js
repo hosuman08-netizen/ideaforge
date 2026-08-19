@@ -612,6 +612,13 @@ function storyCommentsPeek(idea) {
     '<button type="button" class="ghosty" onclick="setTab(\'comments\')">Open thread</button></div>';
 }
 
+/* GOLD50 #5: Discover card density — cover + cat chip + voice energy + goal% one screen. */
+function voiceEnergyDot(idea) {
+  const s = Math.max(0.08, Math.min(1, Number(idea.surprise) || 0.3));
+  const pctE = Math.round(s * 100);
+  return '<span class="vedot" style="--e:' + s.toFixed(2) + '" title="voice energy ' + pctE + ' · local" aria-label="voice energy ' + pctE + '"><i></i></span>';
+}
+
 function ideaCard(idea, rank) {
   const p = Math.min(100, Math.floor(pct(idea)));
   const over = pct(idea) > 100;
@@ -625,14 +632,19 @@ function ideaCard(idea, rank) {
     .map(k => '<span class="kw">#' + escapeHtml(k) + '</span>').join(' ');
 
   el.innerHTML =
-    '<div class="cover" style="--h:' + idea.cover.hue + '">' +
+    '<div class="cover dense" style="--h:' + idea.cover.hue + '">' +
       '<span class="mark">' + escapeHtml(idea.cover.mark) + '</span>' +
       (idea.staffPick ? '<span class="loved">⭐ Loved</span>' : '') +
       (rank < 3 && filters.sort === 'trending' ? '<span class="rankbadge">#' + (rank + 1) + '</span>' : '') +
+      '<div class="cover-dock">' +
+        '<span class="catchip">' + cat.emoji + ' ' + escapeHtml(cat.label) + '</span>' +
+        voiceEnergyDot(idea) +
+        '<span class="goalchip">' + p + '%</span>' +
+      '</div>' +
+      '<div class="cover-bar' + (over ? ' over' : '') + '"><span style="width:' + p + '%"></span></div>' +
     '</div>' +
     '<div class="cardbody">' +
       '<div class="cardtop">' +
-        '<span class="cat">' + cat.emoji + ' ' + cat.label + '</span>' +
         statusPill(idea) +
       '</div>' +
       '<strong>' + escapeHtml(idea.title) + '</strong>' +
