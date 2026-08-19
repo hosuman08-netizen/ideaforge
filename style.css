@@ -183,6 +183,20 @@ h3 { font-size: 14px; color: var(--dim); margin: var(--s5) 0 var(--s3); font-wei
 }
 .cover.dense { height: 112px; }
 .cover .mark { font-size: 34px; opacity: .92; }
+/* WAVE41: GOLD50 #5 leftover — cover image placeholder slot (no upload) */
+.cover-ph {
+  position: absolute; inset: 8px 8px 22px;
+  border: 1px dashed rgba(217,184,119,.42);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(10,8,6,.16);
+  pointer-events: none;
+}
+.cover-ph em {
+  position: absolute; top: 4px; right: 6px;
+  font-size: 8px; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(217,184,119,.72); font-style: normal;
+}
 /* GOLD50 #5: cover + cat chip + voice energy + goal% on one screen */
 .cover-dock {
   position: absolute; left: var(--s2); right: var(--s2); bottom: 10px;

@@ -633,7 +633,7 @@ function ideaCard(idea, rank) {
 
   el.innerHTML =
     '<div class="cover dense" style="--h:' + idea.cover.hue + '">' +
-      '<span class="mark">' + escapeHtml(idea.cover.mark) + '</span>' +
+      '<div class="cover-ph" aria-hidden="true"><em>cover</em><span class="mark">' + escapeHtml(idea.cover.mark) + '</span></div>' +
       (idea.staffPick ? '<span class="loved">⭐ Loved</span>' : '') +
       (rank < 3 && filters.sort === 'trending' ? '<span class="rankbadge">#' + (rank + 1) + '</span>' : '') +
       '<div class="cover-dock">' +
@@ -1552,7 +1552,7 @@ function previewIdea() {
   out.innerHTML =
     '<div class="previewwrap"><div class="prevlabel">Preview — this is how backers will see it</div>' +
     '<div class="idea-card">' +
-      '<div class="cover" style="--h:' + _cover.hue + '"><span class="mark">' + _cover.mark + '</span></div>' +
+      '<div class="cover dense" style="--h:' + _cover.hue + '"><div class="cover-ph" aria-hidden="true"><em>cover</em><span class="mark">' + _cover.mark + '</span></div></div>' +
       '<div class="cardbody">' +
         '<div class="cardtop"><span class="cat">' + cat.emoji + ' ' + cat.label + '</span><span class="pill">' + d.durationDays + ' days</span></div>' +
         '<strong>' + escapeHtml(d.title || 'Untitled idea') + '</strong>' +
