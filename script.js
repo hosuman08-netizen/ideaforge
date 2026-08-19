@@ -2049,6 +2049,31 @@ function handleHash() {
   else { toast('That idea is no longer available.', 'warn'); showDiscover(); }
 }
 
+/* WAVE162: cover label tap = focus placeholder. No upload. No fake money. */
+var COVER_LABEL_FOCUS_MS = 800;
+function focusCoverFromLabel(em) {
+  var ph = em && em.closest ? em.closest('.cover-ph') : null;
+  if (!ph) return;
+  ph.setAttribute('tabindex', '0');
+  ph.classList.add('is-focus');
+  try { ph.focus({ preventScroll: true }); } catch (e) { try { ph.focus(); } catch (e2) {} }
+  clearTimeout(focusCoverFromLabel._t);
+  focusCoverFromLabel._t = setTimeout(function () { ph.classList.remove('is-focus'); }, COVER_LABEL_FOCUS_MS);
+}
+function bindCoverLabelFocus() {
+  if (bindCoverLabelFocus._on) return;
+  bindCoverLabelFocus._on = true;
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t) return;
+    var em = (t.closest && t.closest('.cover-ph em')) || null;
+    if (!em) return;
+    e.preventDefault();
+    e.stopPropagation();
+    focusCoverFromLabel(em);
+  }, true);
+}
+
 function initP12() {
   if (!ideas.length) { ideas = seedIdeas(); saveIdeas(); }
   if (!me.pledges) me.pledges = {};
@@ -2065,6 +2090,7 @@ function initP12() {
   // a shared link opened while the app is already running is a fragment
   // navigation — onload never fires again, so listen for it explicitly
   window.addEventListener('hashchange', handleHash);
+  bindCoverLabelFocus();
 
   setInterval(tickCountdowns, 1000);
 }
