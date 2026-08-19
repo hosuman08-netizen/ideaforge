@@ -477,10 +477,46 @@ function showDiscover() {
   renderDiscover();
 }
 
+function closingSoonList() {
+  return ideas.filter(function (i) { return i.status === 'live' && i.endsAt; })
+    .slice()
+    .sort(function (a, b) { return a.endsAt - b.endsAt; });
+}
+
+function renderCloseHero() {
+  const host = document.getElementById('close-hero');
+  if (!host) return;
+  const live = closingSoonList();
+  const today = live.filter(function (i) { return i.endsAt - Date.now() < DAY; });
+  const week = live.filter(function (i) { return i.endsAt - Date.now() < 7 * DAY; });
+  const rail = (today.length ? today : live).slice(0, 6);
+  let banner = '<b>' + today.length + '</b> close today · <b>' + week.length + '</b> this week · <b>' + live.length + '</b> live';
+  if (!live.length) {
+    host.innerHTML = '<div class="close-banner">No live campaigns right now.</div>';
+    return;
+  }
+  const cards = rail.map(function (idea) {
+    const cat = catOf(idea.category);
+    const p = Math.min(100, Math.floor(pct(idea)));
+    const soon = idea.endsAt - Date.now() < DAY;
+    return '<button type="button" class="close-card' + (soon ? ' today' : '') + '" onclick="showIdea(' + idea.id + ')">' +
+      '<span class="close-mark">' + escapeHtml(idea.cover.mark) + '</span>' +
+      '<span class="close-body"><b>' + escapeHtml(idea.title) + '</b>' +
+      '<em>' + cat.emoji + ' ' + cat.label + ' · ' + p + '%</em>' +
+      '<span class="pill' + (isUrgent(idea) ? ' urgent' : '') + '" data-countdown="' + idea.id + '">' + timeLeft(idea) + '</span></span></button>';
+  }).join('');
+  host.innerHTML =
+    '<div class="close-banner" role="status">' + banner +
+      '<span class="tinynote"> Countdowns from each campaign deadline · in-app tokens only</span></div>' +
+    '<div class="close-rail-h">' + (today.length ? 'Closes in 24h' : 'Soonest deadlines') + '</div>' +
+    '<div class="close-rail" role="list">' + cards + '</div>';
+}
+
 function renderDiscover() {
   const list = document.getElementById('idea-list');
   const sub = document.getElementById('feed-sub');
   if (!list) return;
+  renderCloseHero();
 
   const liveCount = ideas.filter(i => i.status === 'live').length;
   const okCount = ideas.filter(i => i.status === 'funded').length;
@@ -588,6 +624,62 @@ function showIdea(id, tab) {
 }
 function setTab(t) { _view.tab = t; renderDetail(); }
 
+function playStoryHero(id) {
+  const cap = document.getElementById('hero-cap');
+  if (cap) cap.textContent = 'Story beat (local mock) — no live stream. Fictional demo, in-app tokens only.';
+  try { legionTrack('story_hero', { id: id }); } catch (e) {}
+}
+
+function deadlineRingHtml(idea) {
+  const r = 26, circ = 2 * Math.PI * r;
+  let frac = 0, label = '—', sub = 'deadline';
+  if (idea.status === 'live' && idea.endsAt && idea.launchedAt) {
+    const total = Math.max(1, idea.endsAt - idea.launchedAt);
+    frac = Math.max(0, Math.min(1, (idea.endsAt - Date.now()) / total));
+    label = timeLeftShort(idea);
+    sub = 'to go';
+  } else if (idea.status === 'funded') {
+    frac = 1; label = 'funded'; sub = 'closed';
+  } else if (idea.status === 'failed') {
+    frac = 0; label = 'ended'; sub = 'missed';
+  } else {
+    frac = 1; label = String(idea.status || '—'); sub = 'status';
+  }
+  const off = (circ * (1 - frac)).toFixed(1);
+  return '<div class="dead-ring" aria-label="Campaign time remaining">' +
+    '<svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true">' +
+    '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="currentColor" stroke-width="5" opacity=".18"/>' +
+    '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#c5a46e" stroke-width="5" stroke-linecap="round" ' +
+    'stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + off + '" transform="rotate(-90 32 32)"/>' +
+    '</svg>' +
+    '<div class="dead-lab"><b>' + escapeHtml(label) + '</b><span>' + sub + '</span></div></div>';
+}
+
+function storyCampaignExtras(idea) {
+  const sorted = (idea.tiers || []).slice().sort(function (a, b) {
+    return (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || a.amount - b.amount;
+  }).slice(0, 3);
+  const cards = sorted.map(function (t) {
+    return '<div class="tier story-tier' + (t.featured ? ' featured' : '') + '">' +
+      (t.featured ? '<div class="tierflag">Most popular</div>' : '') +
+      '<div class="tieramt">' + t.amount.toLocaleString() + ' cr</div>' +
+      '<div class="tiertitle">' + escapeHtml(t.title) + '</div>' +
+      '<div class="tierdesc">' + escapeHtml(t.desc) + '</div>' +
+      '<button onclick="openPledge(' + idea.id + ',' + t.id + ')">Select — ' + t.amount + ' cr</button></div>';
+  }).join('');
+  let upd = '';
+  if (idea.updates && idea.updates.length) {
+    const u = idea.updates[0];
+    upd = '<div class="story-upd"><div class="upmeta">Latest update · ' + new Date(u.time).toLocaleDateString() + '</div>' +
+      '<b>' + escapeHtml(u.title) + '</b><p class="prose">' + escapeHtml(String(u.body || '').slice(0, 180)) + '</p></div>';
+  } else {
+    upd = '<div class="story-upd"><div class="upmeta">Launch note</div>' +
+      '<p class="prose">Campaign page is live. Fictional demo — in-app tokens only, no real money or equity.</p></div>';
+  }
+  return '<h3 class="story-h">Reward tiers</h3><div class="story-tiers">' + cards + '</div>' +
+    '<button class="ghosty" onclick="setTab(\'rewards\')">See all tiers</button>' + upd;
+}
+
 function canSeeFull(idea) {
   if (!idea) return false;
   if (wallet && idea.owner === wallet) return true;
@@ -631,8 +723,12 @@ function renderDetail() {
   }
 
   box.innerHTML =
-    '<div class="dcover" style="--h:' + idea.cover.hue + '"><span class="dmark">' + escapeHtml(idea.cover.mark) + '</span>' +
-      (idea.staffPick ? '<span class="loved">⭐ Loved</span>' : '') + '</div>' +
+    '<div class="dcover story-hero" style="--h:' + idea.cover.hue + '">' +
+      '<span class="dmark">' + escapeHtml(idea.cover.mark) + '</span>' +
+      '<button type="button" class="hero-play" onclick="playStoryHero(' + idea.id + ')">▶ Story</button>' +
+      (idea.staffPick ? '<span class="loved">⭐ Loved</span>' : '') +
+    '</div>' +
+    '<p id="hero-cap" class="tinynote">Local mock film slot · no live video · in-app tokens only</p>' +
 
     '<div class="dhead">' +
       '<div class="cardtop"><span class="cat">' + cat.emoji + ' ' + cat.label + '</span>' + statusPill(idea) + '</div>' +
@@ -640,13 +736,16 @@ function renderDetail() {
       (idea.subtitle ? '<p class="dsub">' + escapeHtml(idea.subtitle) + '</p>' : '') +
     '</div>' +
 
-    '<div class="dstats">' +
-      '<div class="bar' + (pct(idea) > 100 ? ' over' : '') + '"><span style="width:' + Math.min(100, p) + '%"></span></div>' +
-      '<div class="statrow">' +
-        '<div class="stat"><b>' + idea.raised.toLocaleString() + '</b><span>of ' + idea.goal.toLocaleString() + ' cr</span></div>' +
-        '<div class="stat"><b>' + p + '%</b><span>funded</span></div>' +
-        '<div class="stat"><b>' + idea.backers.length + '</b><span>backers</span></div>' +
-        '<div class="stat"><b data-countdown-short="' + idea.id + '">' + (idea.status === 'live' ? timeLeftShort(idea) : '—') + '</b><span>to go</span></div>' +
+    '<div class="dstats dstats-hero">' +
+      deadlineRingHtml(idea) +
+      '<div class="dstats-col">' +
+        '<div class="bar' + (pct(idea) > 100 ? ' over' : '') + '"><span style="width:' + Math.min(100, p) + '%"></span></div>' +
+        '<div class="statrow">' +
+          '<div class="stat"><b>' + idea.raised.toLocaleString() + '</b><span>of ' + idea.goal.toLocaleString() + ' cr</span></div>' +
+          '<div class="stat"><b>' + p + '%</b><span>funded</span></div>' +
+          '<div class="stat"><b>' + idea.backers.length + '</b><span>backers</span></div>' +
+          '<div class="stat"><b data-countdown-short="' + idea.id + '">' + (idea.status === 'live' ? timeLeftShort(idea) : '—') + '</b><span>to go</span></div>' +
+        '</div>' +
       '</div>' +
     '</div>' +
 
@@ -701,22 +800,25 @@ function renderTab(idea, isOwner) {
 
 function tabStory(idea) {
   const kw = (idea.keywords || []).map(k => '<button class="tag" onclick="toggleTag(\'' + escapeHtml(k) + '\');showDiscover()">#' + escapeHtml(k) + '</button>').join(' ');
+  let body;
   if (canSeeFull(idea)) {
-    return '<p class="prose">' + escapeHtml(idea.secretSauce || idea.desc || '') + '</p>' +
+    body = '<p class="prose">' + escapeHtml(idea.secretSauce || idea.desc || '') + '</p>' +
       (idea.voiceUrl ? '<audio controls src="' + escapeHtml(idea.voiceUrl) + '"></audio>' : '') +
       (idea.aiDisclosure ? '<div class="tinynote">AI tools disclosed by the creator: ' + escapeHtml(idea.aiDisclosure) + '</div>' : '') +
       '<div class="tagrow">' + kw + '</div>';
+  } else {
+    const cost = unlockCost(idea);
+    body = '<p class="prose teaser">' + escapeHtml(idea.teaserProblem) + '</p>' +
+      '<div class="tagrow">' + kw + '</div>' +
+      '<div class="lockbox">' +
+        '<div class="lockhead">🔒 Full pitch protected</div>' +
+        '<p class="tinynote">The creator published a teaser publicly and kept the mechanism private. ' +
+        (idea.unlocks.length ? idea.unlocks.length + ' backer' + (idea.unlocks.length === 1 ? ' has' : 's have') + ' unlocked it.' : 'Nobody has unlocked it yet.') + '</p>' +
+        '<button class="unlock-btn" onclick="unlockIdea(' + idea.id + ')">Unlock full pitch — ' + cost + ' cr</button>' +
+        '<div class="tinynote">70% of that goes to the creator. Backing at any tier also unlocks it.</div>' +
+      '</div>';
   }
-  const cost = unlockCost(idea);
-  return '<p class="prose teaser">' + escapeHtml(idea.teaserProblem) + '</p>' +
-    '<div class="tagrow">' + kw + '</div>' +
-    '<div class="lockbox">' +
-      '<div class="lockhead">🔒 Full pitch protected</div>' +
-      '<p class="tinynote">The creator published a teaser publicly and kept the mechanism private. ' +
-      (idea.unlocks.length ? idea.unlocks.length + ' backer' + (idea.unlocks.length === 1 ? ' has' : 's have') + ' unlocked it.' : 'Nobody has unlocked it yet.') + '</p>' +
-      '<button class="unlock-btn" onclick="unlockIdea(' + idea.id + ')">Unlock full pitch — ' + cost + ' cr</button>' +
-      '<div class="tinynote">70% of that goes to the creator. Backing at any tier also unlocks it.</div>' +
-    '</div>';
+  return body + storyCampaignExtras(idea);
 }
 
 function tabRewards(idea) {
@@ -1736,6 +1838,11 @@ function tickCountdowns() {
     el.textContent = timeLeftShort(idea);
   });
   if (changed) rerender();
+  else if (document.getElementById('discover') && !document.getElementById('discover').classList.contains('hidden')) {
+    const nToday = closingSoonList().filter(function (i) { return i.endsAt - Date.now() < DAY; }).length;
+    const banner = document.querySelector('.close-banner b');
+    if (banner && banner.textContent !== String(nToday)) renderCloseHero();
+  }
 }
 
 // ── Seed + init ───────────────────────────────────────────────────────
