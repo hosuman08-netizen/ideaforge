@@ -499,8 +499,12 @@ function renderCloseHero() {
     const cat = catOf(idea.category);
     const p = Math.min(100, Math.floor(pct(idea)));
     const soon = idea.endsAt - Date.now() < DAY;
+    const hue = (idea.cover && idea.cover.hue) || 210;
+    const mark = (idea.cover && idea.cover.mark) || '✦';
     return '<button type="button" class="close-card' + (soon ? ' today' : '') + '" onclick="showIdea(' + idea.id + ')">' +
-      '<span class="close-mark">' + escapeHtml(idea.cover.mark) + '</span>' +
+      '<span class="close-cover" style="--h:' + hue + '">' +
+        '<span class="cover-ph" aria-hidden="true"><em>cover</em><span class="close-mark">' + escapeHtml(mark) + '</span></span>' +
+      '</span>' +
       '<span class="close-body"><b>' + escapeHtml(idea.title) + '</b>' +
       '<em>' + cat.emoji + ' ' + cat.label + ' · ' + p + '%</em>' +
       '<span class="pill' + (isUrgent(idea) ? ' urgent' : '') + '" data-countdown="' + idea.id + '">' + timeLeft(idea) + '</span></span></button>';
