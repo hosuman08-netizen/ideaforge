@@ -480,6 +480,19 @@ button.primary.slim { display: inline-block; }
 .previewwrap { margin-top: var(--s5); }
 .prevlabel { font-size: 11px; color: var(--gold); margin-bottom: var(--s2); }
 
+/* GOLD50 #4 — 3-step submit wizard */
+.wiz-rail { display: flex; gap: 6px; margin: var(--s4) 0 var(--s3); }
+.wiz-dot {
+  flex: 1; font-size: 11px; padding: var(--s2) 4px;
+  border-radius: 999px; color: var(--dim);
+}
+.wiz-dot.done { border-color: var(--good); color: var(--good); }
+.wiz-dot.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); font-weight: 600; }
+.wiz-nav { display: flex; gap: var(--s2); margin-top: var(--s4); }
+.wiz-nav button { flex: 1; }
+.wiz-nav button[disabled] { opacity: .4; cursor: default; }
+.wiz-pane { min-height: 0; }
+
 /* ── My Ideas ── */
 .wallet-earn { color: var(--gold); font-weight: 600; }
 .earn-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: var(--s2); font-size: 12px; }

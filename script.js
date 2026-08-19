@@ -1388,6 +1388,59 @@ function addFaq(id) {
 let _cover = { mark: COVER_MARKS[0], hue: 210 };
 let _tierDraft = [];
 
+let _wizStep = 1;
+
+function setWizStep(n) {
+  n = Math.max(1, Math.min(3, n | 0));
+  if (n > _wizStep) {
+    for (let i = _wizStep; i < n && i < 3; i++) {
+      const err = validateWizStep(i);
+      if (err) { toast(err, 'warn'); return; }
+    }
+  }
+  _wizStep = n;
+  document.querySelectorAll('#submit .wiz-pane').forEach(p => {
+    p.classList.toggle('hidden', String(p.getAttribute('data-pane')) !== String(n));
+  });
+  document.querySelectorAll('#wizRail .wiz-dot').forEach(b => {
+    const s = Number(b.getAttribute('data-wiz'));
+    b.classList.toggle('on', s === n);
+    b.classList.toggle('done', s < n);
+  });
+  const back = document.getElementById('wizBack');
+  const next = document.getElementById('wizNext');
+  if (back) back.disabled = n === 1;
+  if (next) {
+    next.classList.toggle('hidden', n === 3);
+    next.textContent = '다음 →';
+  }
+}
+
+function validateWizStep(n) {
+  const d = collectSubmission();
+  if (n === 1) {
+    if (!d.title) return 'Give the idea a title.';
+    if (!d.teaserInput) return 'Write a public teaser — it is what everyone sees.';
+    return null;
+  }
+  if (n === 2) {
+    if (!d.risks) return 'The risks and challenges section is required.';
+    if (d.risks.length < 30) return 'Say a bit more in risks and challenges — backers read it closely.';
+    return null;
+  }
+  return validateSubmission(d);
+}
+
+function wizNext() {
+  const err = validateWizStep(_wizStep);
+  if (err) { toast(err, 'warn'); return; }
+  if (_wizStep < 3) setWizStep(_wizStep + 1);
+}
+
+function wizBack() {
+  if (_wizStep > 1) setWizStep(_wizStep - 1);
+}
+
 function showSubmit() {
   hideAll();
   setActiveNav('showSubmit');
@@ -1399,6 +1452,7 @@ function showSubmit() {
   renderCoverPicker();
   if (!_tierDraft.length) _tierDraft = defaultTiers(Number(document.getElementById('goal').value) || 500);
   renderTierEditor();
+  setWizStep(1);
 }
 
 function renderCoverPicker() {
@@ -1557,6 +1611,7 @@ function submitIdea() {
   document.getElementById('chk-rights').checked = false;
   document.getElementById('chk-ai').checked = false;
   document.getElementById('preview-out').innerHTML = '';
+  setWizStep(1);
   document.getElementById('voice-preview').innerHTML = '';
   window._p12Voice = null;
   _tierDraft = defaultTiers(500);

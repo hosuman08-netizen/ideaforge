@@ -79,66 +79,82 @@
       <div id="detail-body"></div>
     </div>
 
-    <!-- ── Submit ── -->
+    <!-- ── Submit ── GOLD50 #4: 3-step wizard (teaser / locked pitch / goal·deadline·tier) -->
     <div id="submit" class="section hidden">
       <h2>Submit Your Idea</h2>
-      <p class="feed-sub">Submissions go through a short review before they go live — same as a real platform. You can preview the page first.</p>
+      <p class="feed-sub">3 steps — teaser, locked pitch, then goal. Preview before it goes to review.</p>
+      <div class="wiz-rail" id="wizRail" role="tablist" aria-label="submit steps">
+        <button type="button" class="wiz-dot on" data-wiz="1" onclick="setWizStep(1)">1 티저</button>
+        <button type="button" class="wiz-dot" data-wiz="2" onclick="setWizStep(2)">2 보호피치</button>
+        <button type="button" class="wiz-dot" data-wiz="3" onclick="setWizStep(3)">3 골·마감</button>
+      </div>
       <div class="form">
-        <label for="idea-title">Idea title</label>
-        <input id="idea-title" placeholder="Voice-powered errand matching" maxlength="60">
+        <div class="wiz-pane" data-pane="1">
+          <label for="idea-title">Idea title</label>
+          <input id="idea-title" placeholder="Voice-powered errand matching" maxlength="60">
 
-        <label for="idea-sub">Subtitle <span class="hintlabel">one line, what it is</span></label>
-        <input id="idea-sub" placeholder="Last-mile errands matched by voice in under 10 seconds" maxlength="90">
+          <label for="idea-sub">Subtitle <span class="hintlabel">one line, what it is</span></label>
+          <input id="idea-sub" placeholder="Last-mile errands matched by voice in under 10 seconds" maxlength="90">
 
-        <label for="idea-cat">Category</label>
-        <select id="idea-cat" class="live-select"></select>
+          <label for="idea-cat">Category</label>
+          <select id="idea-cat" class="live-select"></select>
 
-        <label>Cover <span class="hintlabel">the feed is visual — pick a mark</span></label>
-        <div id="cover-picker" class="coverpick"></div>
+          <label>Cover <span class="hintlabel">the feed is visual — pick a mark</span></label>
+          <div id="cover-picker" class="coverpick"></div>
 
-        <label>Voice pitch <span class="hintlabel">optional — adds a 🎙 badge</span></label>
-        <button onclick="recordVoicePitch()">🎙 Record voice pitch</button>
-        <div id="voice-preview"></div>
-
-        <label for="idea-teaser">Public teaser <span class="hintlabel">everyone sees this — keywords become tags</span></label>
-        <input id="idea-teaser" placeholder="Voice matching for last-mile errands, 3B market gap">
-
-        <label for="idea-desc">Full vision <span class="hintlabel">only backers who unlock see this</span></label>
-        <textarea id="idea-desc" placeholder="Detailed mechanism, execution plan, unfair advantage…"></textarea>
-
-        <label for="idea-risks">Risks and challenges <span class="req">required</span></label>
-        <textarea id="idea-risks" placeholder="What could go wrong, and how you'd handle it. Tooling, suppliers, timeline, technical unknowns…"></textarea>
-        <small>This section's title is fixed and it cannot be skipped — backers use it to judge how openly you're describing the downside.</small>
-
-        <div class="row2">
-          <div>
-            <label for="goal">Funding goal <span class="hintlabel">Credits</span></label>
-            <input id="goal" type="number" value="500" min="50" oninput="onGoalChange()">
-          </div>
-          <div>
-            <label for="duration">Duration</label>
-            <select id="duration" class="live-select">
-              <option value="7">7 days</option>
-              <option value="14">14 days</option>
-              <option value="21">21 days</option>
-              <option value="30" selected>30 days (recommended)</option>
-              <option value="45">45 days</option>
-              <option value="60">60 days</option>
-            </select>
-          </div>
+          <label for="idea-teaser">Public teaser <span class="hintlabel">everyone sees this — keywords become tags</span></label>
+          <input id="idea-teaser" placeholder="Voice matching for last-mile errands, 3B market gap">
         </div>
-        <small id="aon-note">All-or-nothing: if the goal isn't met by the deadline, every pledge is returned and you keep nothing.</small>
 
-        <label>Reward tiers <span class="hintlabel">tiers are the biggest funding lever — most pledges land in the low bands</span></label>
-        <div id="tier-rows"></div>
-        <button onclick="addTierRow()">+ Add tier</button>
+        <div class="wiz-pane hidden" data-pane="2">
+          <label>Voice pitch <span class="hintlabel">optional — adds a 🎙 badge</span></label>
+          <button type="button" onclick="recordVoicePitch()">🎙 Record voice pitch</button>
+          <div id="voice-preview"></div>
 
-        <label class="checkline"><input type="checkbox" id="chk-rights"> I hold the rights to everything in this submission.</label>
-        <label class="checkline"><input type="checkbox" id="chk-ai"> I've disclosed any AI tools used (below) — or none were used.</label>
-        <input id="ai-disclosure" placeholder="AI tools used (optional)">
+          <label for="idea-desc">Full vision <span class="hintlabel">only backers who unlock see this</span></label>
+          <textarea id="idea-desc" placeholder="Detailed mechanism, execution plan, unfair advantage…"></textarea>
 
-        <button onclick="previewIdea()">👁 Preview page</button>
-        <button onclick="submitIdea()" class="primary">Submit for review</button>
+          <label for="idea-risks">Risks and challenges <span class="req">required</span></label>
+          <textarea id="idea-risks" placeholder="What could go wrong, and how you'd handle it. Tooling, suppliers, timeline, technical unknowns…"></textarea>
+          <small>This section's title is fixed and it cannot be skipped — backers use it to judge how openly you're describing the downside.</small>
+        </div>
+
+        <div class="wiz-pane hidden" data-pane="3">
+          <div class="row2">
+            <div>
+              <label for="goal">Funding goal <span class="hintlabel">Credits</span></label>
+              <input id="goal" type="number" value="500" min="50" oninput="onGoalChange()">
+            </div>
+            <div>
+              <label for="duration">Duration</label>
+              <select id="duration" class="live-select">
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+                <option value="21">21 days</option>
+                <option value="30" selected>30 days (recommended)</option>
+                <option value="45">45 days</option>
+                <option value="60">60 days</option>
+              </select>
+            </div>
+          </div>
+          <small id="aon-note">All-or-nothing: if the goal isn't met by the deadline, every pledge is returned and you keep nothing.</small>
+
+          <label>Reward tiers <span class="hintlabel">tiers are the biggest funding lever — most pledges land in the low bands</span></label>
+          <div id="tier-rows"></div>
+          <button type="button" onclick="addTierRow()">+ Add tier</button>
+
+          <label class="checkline"><input type="checkbox" id="chk-rights"> I hold the rights to everything in this submission.</label>
+          <label class="checkline"><input type="checkbox" id="chk-ai"> I've disclosed any AI tools used (below) — or none were used.</label>
+          <input id="ai-disclosure" placeholder="AI tools used (optional)">
+
+          <button type="button" onclick="previewIdea()">👁 Preview page</button>
+          <button type="button" onclick="submitIdea()" class="primary">Submit for review</button>
+        </div>
+
+        <div class="wiz-nav">
+          <button type="button" id="wizBack" onclick="wizBack()">← 이전</button>
+          <button type="button" id="wizNext" class="primary" onclick="wizNext()">다음 →</button>
+        </div>
       </div>
       <div id="preview-out"></div>
     </div>
