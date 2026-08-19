@@ -776,7 +776,7 @@ function renderDetail() {
 
   box.innerHTML =
     '<div class="dcover story-hero" style="--h:' + idea.cover.hue + '">' +
-      '<span class="dmark">' + escapeHtml(idea.cover.mark) + '</span>' +
+      '<div class="cover-ph" aria-hidden="true"><em>cover</em><span class="dmark">' + escapeHtml(idea.cover.mark) + '</span></div>' +
       '<button type="button" class="hero-play" onclick="playStoryHero(' + idea.id + ')">▶ Story</button>' +
       (idea.staffPick ? '<span class="loved">⭐ Loved</span>' : '') +
     '</div>' +
